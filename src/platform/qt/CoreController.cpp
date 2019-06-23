@@ -991,3 +991,48 @@ CoreController::Interrupter::~Interrupter() {
 	}
 	mCoreThreadContinue(m_parent->thread());
 }
+
+void CoreController::attachMobileAdapter() {
+	Interrupter interrupter(this);
+
+	clearMultiplayerController();
+
+	MobileAdapterGBCreate(&m_adapter.d);
+	m_adapter.parent = this;
+
+	if (platform() == PLATFORM_GB) {
+		GB* gb = static_cast<GB*>(m_threadContext.core->board);
+		GBSIOSetDriver(&gb->sio, &m_adapter.d.gbDriver);
+	} else {
+		mCoreThread* thread = this->thread();
+
+		if (!thread) {
+			return;
+		}
+
+		GBA* gba = static_cast<GBA*>(thread->core->board);
+		//GBASIOSetDriver(&gba->sio, &m_adapter.d.gbaDriver, SIO_NORMAL_8); // TODO
+	}
+
+	m_isMobileAdapterAttached = true;
+}
+
+void CoreController::detachMobileAdapter() {
+	Interrupter interrupter(this);
+
+	if (platform() == PLATFORM_GB) {		
+		GB* gb = static_cast<GB*>(m_threadContext.core->board);
+		GBSIOSetDriver(&gb->sio, nullptr);
+	} else {
+		mCoreThread* thread = this->thread();
+		
+		if (!thread) {
+			return;
+		}
+
+		GBA* gba = static_cast<GBA*>(thread->core->board);
+		GBASIOSetDriver(&gba->sio, nullptr, SIO_NORMAL_8);
+	}
+
+	m_isMobileAdapterAttached = false;
+}

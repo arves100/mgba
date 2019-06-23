@@ -29,6 +29,8 @@
 #include <mgba/gba/interface.h>
 #endif
 
+#include <mgba/feature/mobileadaptergb.h>
+
 struct mCore;
 
 namespace QGBA {
@@ -169,6 +171,10 @@ public slots:
 
 	void setFramebufferHandle(int fb);
 
+	void attachMobileAdapter();
+	void detachMobileAdapter();
+	bool isMobileAdapterAttached() { return m_isMobileAdapterAttached; }
+
 signals:
 	void started();
 	void paused();
@@ -256,6 +262,13 @@ private:
 #ifdef M_CORE_GBA
 	GBASIOBattlechipGate m_battlechip;
 #endif
+
+	bool m_isMobileAdapterAttached = false;
+
+	struct QMobileAdapterGB {
+		MobileAdapterGB d;
+		CoreController* parent;
+	} m_adapter;
 };
 
 }

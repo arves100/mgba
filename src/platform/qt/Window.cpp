@@ -1316,6 +1316,16 @@ void Window::setupMenu(QMenuBar* menubar) {
 	m_platformActions.insert(PLATFORM_GBA, bcGate);
 #endif
 
+	Action* cgbAdapter = addGameAction(tr("Mobile Adapter GB..."), "cgbAdapter",
+	          [this]() { 
+		if (m_controller->isMobileAdapterAttached())
+			m_controller->detachMobileAdapter();
+		else
+			m_controller->attachMobileAdapter();
+	}, "emu");
+
+	m_platformActions.insert(PLATFORM_GB, cgbAdapter);
+
 	m_actions.addMenu(tr("Audio/&Video"), "av");
 	m_actions.addMenu(tr("Frame size"), "frame", "av");
 	for (int i = 1; i <= 8; ++i) {

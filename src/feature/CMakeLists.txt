@@ -2,7 +2,8 @@ include(ExportDirectory)
 set(SOURCE_FILES
 	commandline.c
 	thread-proxy.c
-	video-logger.c)
+	video-logger.c
+	mobileadaptergb.c)
 
 set(GUI_FILES
 	gui/gui-config.c
