@@ -16,6 +16,7 @@
 CXX_GUARD_START
 
 #include <mgba/internal/gb/sio.h>
+#include <mgba/internal/gba/sio.h>
 #include <mgba/gb/interface.h>
 
 enum MobileAdapterGBStatus {
@@ -47,6 +48,7 @@ struct MobileAdapterGBExternalServerData {
 
 struct MobileAdapterGB {
 	struct GBSIODriver gbDriver;
+	struct GBASIODriver gbaDriver;
 
 	uint8_t* buffer;
 	uint8_t bufferLength;

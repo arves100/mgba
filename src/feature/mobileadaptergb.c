@@ -13,22 +13,45 @@
 
 #include <mgba/feature/mobileadaptergb.h>
 
+#include <mgba/internal/gba/io.h>
+
 mLOG_DEFINE_CATEGORY(CGBADAPTER, "Mobile Adapter GB", "feature.mobileadaptergb");
 
-static bool MobileAdapterGBInit(struct GBSIODriver* driver);
-static void MobileAdapterGBDeinit(struct GBSIODriver* driver);
-static void MobileAdapterGBWriteSB(struct GBSIODriver* driver, uint8_t value);
-static uint8_t MobileAdapterGBWriteSC(struct GBSIODriver* driver, uint8_t value);
-static void MobileAdapterGBProcessData(struct MobileAdapterGB* adapter);
-static void MobileAdapterGBResetServerData(struct MobileAdapterGBExternalServerData* server);
-static void MobileAdapterGBFakeServer(struct MobileAdapterGB* adapter, uint8_t* length, uint8_t** data, bool receiving);
+// Common functions
+static void    MobileAdapter_ProcessData(struct MobileAdapterGB* adapter);
+static void    MobileAdapter_ResetServerData(struct MobileAdapterGBExternalServerData* server);
+static void    MobileAdapter_FakeServer(struct MobileAdapterGB* adapter, uint8_t* length, uint8_t** data, bool receiving);
+static void    MobileAdapter_Init(struct MobileAdapterGB* adapter);
+static uint8_t MobileAdapter_HandleByte(struct MobileAdapterGB* adapter, uint8_t value);
+static void    MobileAdapter_Deinit(struct MobileAdapterGB* adapter);
+
+// GB SIO DRIVER
+static bool    MobileAdapter_GB_Init(struct GBSIODriver* driver);
+static void    MobileAdapter_GB_Deinit(struct GBSIODriver* driver);
+static void    MobileAdapter_GB_WriteSB(struct GBSIODriver* driver, uint8_t value);
+static uint8_t MobileAdapter_GB_WriteSC(struct GBSIODriver* driver, uint8_t value);
+
+// GBA SIO DRIVER
+static bool      MobileAdapter_AGB_Init(struct GBASIODriver* driver);
+static void      MobileAdapter_AGB_Deinit(struct GBASIODriver* driver);
+static uint16_t  MobileAdapter_AGB_WriteRegister(struct GBASIODriver* driver, uint32_t address, uint16_t value);
+
 
 void MobileAdapterGBCreate(struct MobileAdapterGB* adapter) {
-	adapter->gbDriver.init = MobileAdapterGBInit;
-	adapter->gbDriver.deinit = MobileAdapterGBDeinit;
-	adapter->gbDriver.writeSB = MobileAdapterGBWriteSB;
-	adapter->gbDriver.writeSC = MobileAdapterGBWriteSC;
+	// GameBoy Color driver init
+	adapter->gbDriver.init = MobileAdapter_GB_Init;
+	adapter->gbDriver.deinit = MobileAdapter_GB_Deinit;
+	adapter->gbDriver.writeSB = MobileAdapter_GB_WriteSB;
+	adapter->gbDriver.writeSC = MobileAdapter_GB_WriteSC;
 
+	// GameBoy Advance driver init (NORMAL8)
+	adapter->gbaDriver.init = MobileAdapter_AGB_Init;
+	adapter->gbaDriver.deinit = MobileAdapter_AGB_Deinit;
+	adapter->gbaDriver.load = /*MobileAdapter_AGB_Load*/ NULL;
+	adapter->gbaDriver.unload = /*MobileAdapter_AGB_Unload*/ NULL;
+	adapter->gbaDriver.writeRegister = MobileAdapter_AGB_WriteRegister;
+
+	// Common callbacks
 	adapter->dial = NULL;
 	adapter->connect = NULL;
 	adapter->disconnect = NULL;
@@ -42,16 +65,14 @@ void MobileAdapterGBCreate(struct MobileAdapterGB* adapter) {
 	adapter->readConfiguration = NULL;
 }
 
-void MobileAdapterGBResetServerData(struct MobileAdapterGBExternalServerData* server) {
+void MobileAdapter_ResetServerData(struct MobileAdapterGBExternalServerData* server) {
 	memset(server->address, 0, 16);
 	server->isConnectionOpened = false;
 	server->port = 0;
 }
 
-bool MobileAdapterGBInit(struct GBSIODriver* driver) {
-	struct MobileAdapterGB* adapter = (struct MobileAdapterGB*) driver;
-
-	MobileAdapterGBResetServerData(&adapter->server);
+void MobileAdapter_Init(struct MobileAdapterGB* adapter) {
+	MobileAdapter_ResetServerData(&adapter->server);
 
 	adapter->status = MOBILE_ADAPTER_GB_STATUS_WAITING;
 
@@ -64,21 +85,16 @@ bool MobileAdapterGBInit(struct GBSIODriver* driver) {
 	adapter->isLineBusy = false;
 	adapter->isLoggedIn = false;
 	adapter->isSending = false;
-
-	return true;
 }
 
-void MobileAdapterGBDeinit(struct GBSIODriver* driver) {
-	struct MobileAdapterGB* adapter = (struct MobileAdapterGB*) driver;
-
+static void MobileAdapter_Deinit(struct MobileAdapterGB* adapter) {
 	if (adapter->buffer)
 		free(adapter->buffer);
 
 	adapter->buffer = NULL;
 }
 
-static void MobileAdapterGBWriteSB(struct GBSIODriver* driver, uint8_t value) {
-	struct MobileAdapterGB* adapter = (struct MobileAdapterGB*) driver;
+static uint8_t MobileAdapter_HandleByte(struct MobileAdapterGB* adapter, uint8_t value) {
 	uint8_t returnValue = 0x00;
 
 	switch (adapter->status) {
@@ -207,25 +223,16 @@ static void MobileAdapterGBWriteSB(struct GBSIODriver* driver, uint8_t value) {
 
 		if (!adapter->isSending) {
 			returnValue = 0x80 ^ adapter->command;
-			MobileAdapterGBProcessData(adapter);
+			MobileAdapter_ProcessData(adapter);
 		}
 
 		adapter->isSending = !adapter->isSending;
 	}
 
-	driver->p->pendingSB = returnValue;
+	return returnValue;
 }
 
-static uint8_t MobileAdapterGBWriteSC(struct GBSIODriver* driver, uint8_t value) {
-	struct MobileAdapterGB* adapter = (struct MobileAdapterGB*) driver;
-
-	if (value & 1)
-		value = value & ~1;
-
-	return value; // We can't be the master
-}
-
-static void MobileAdapterGBProcessData(struct MobileAdapterGB* adapter) {
+static void MobileAdapter_ProcessData(struct MobileAdapterGB* adapter) {
 	uint8_t* inputData = adapter->buffer;
 	uint8_t inputDataLen = adapter->bufferLength;
 	uint8_t* outputData = NULL;
@@ -285,7 +292,7 @@ static void MobileAdapterGBProcessData(struct MobileAdapterGB* adapter) {
 
 		mLOG(CGBADAPTER, INFO, "Disconnected from server %s:%u", adapter->server.address, adapter->server.port);
 
-		MobileAdapterGBResetServerData(&adapter->server);
+		MobileAdapter_ResetServerData(&adapter->server);
 		adapter->isLineBusy = false;
 		break;
 
@@ -398,7 +405,7 @@ static void MobileAdapterGBProcessData(struct MobileAdapterGB* adapter) {
 	}
 
 	case 0x23: { // Connect to an external server
-		MobileAdapterGBResetServerData(&adapter->server);
+		MobileAdapter_ResetServerData(&adapter->server);
 
 		adapter->server.address[0] = inputData[0];
 		adapter->server.address[1] = '.';
@@ -437,7 +444,7 @@ static void MobileAdapterGBProcessData(struct MobileAdapterGB* adapter) {
 			adapter->disconnect(adapter);
 		}
 
-		MobileAdapterGBResetServerData(&adapter->server);
+		MobileAdapter_ResetServerData(&adapter->server);
 		mLOG(CGBADAPTER, INFO, "Disconnected to server");
 		break;
 
@@ -454,7 +461,7 @@ static void MobileAdapterGBProcessData(struct MobileAdapterGB* adapter) {
 						break;
 					}
 				} else {
-						MobileAdapterGBFakeServer(adapter, &inputDataLen, &inputData, false);
+						MobileAdapter_FakeServer(adapter, &inputDataLen, &inputData, false);
 				}
 
 				adapter->command = 0x95;
@@ -475,7 +482,7 @@ static void MobileAdapterGBProcessData(struct MobileAdapterGB* adapter) {
 						free(readOut);
 					}
 				} else {
-					MobileAdapterGBFakeServer(adapter, &outputDataLen, &outputData, true);
+					MobileAdapter_FakeServer(adapter, &outputDataLen, &outputData, true);
 				}
 			}
 		} else {
@@ -499,7 +506,7 @@ static void MobileAdapterGBProcessData(struct MobileAdapterGB* adapter) {
 	adapter->bufferLength = outputDataLen;
 }
 
-void MobileAdapterGBFakeServer(struct MobileAdapterGB* adapter, uint8_t* length, uint8_t** data, bool receiving) {
+void MobileAdapter_FakeServer(struct MobileAdapterGB* adapter, uint8_t* length, uint8_t** data, bool receiving) {
 	if (!receiving) {
 		memset(adapter->internalServerBuffer, 0, 254);
 		memcpy(adapter->internalServerBuffer, *data, *length);
@@ -533,4 +540,55 @@ void MobileAdapterGBFakeServer(struct MobileAdapterGB* adapter, uint8_t* length,
 
 		*data = addData;
 	}
+}
+
+// GameBoy SIO Driver
+static void MobileAdapter_GB_WriteSB(struct GBSIODriver* driver, uint8_t value) {
+	driver->p->pendingSB = MobileAdapter_HandleByte((struct MobileAdapterGB*) driver, value);
+}
+
+static uint8_t MobileAdapter_GB_WriteSC(struct GBSIODriver* driver, uint8_t value) {
+	struct MobileAdapterGB* adapter = (struct MobileAdapterGB*) driver;
+
+	if (value & 1)
+		value = value & ~1; // The adapter is always the slave
+
+	return value; 
+}
+
+static bool MobileAdapter_GB_Init(struct GBSIODriver* driver) {
+	MobileAdapter_Init((struct MobileAdapterGB*)driver);
+	return true;
+}
+
+static void MobileAdapter_GB_Deinit(struct GBSIODriver* driver) {
+	MobileAdapter_Deinit((struct MobileAdapterGB*)driver);
+}
+
+// GameBoy Advance SIO Driver
+static bool MobileAdapter_AGB_Init(struct GBASIODriver* driver) {
+	MobileAdapter_Init((struct MobileAdapterGB*)driver);
+	return true;
+}
+
+static void MobileAdapter_AGB_Deinit(struct GBASIODriver* driver) {
+	MobileAdapter_Deinit((struct MobileAdapterGB*)driver);
+}
+
+static int bitCount = 0;
+
+static uint16_t MobileAdapter_AGB_WriteRegister(struct GBASIODriver* driver, uint32_t address, uint16_t value) {
+	switch (address) {
+	case REG_SIOCNT:
+		if (value & 0x80)
+			value = value & ~0x80; // The adapter is always the slave
+		break;
+	case REG_SIODATA8:
+		value = MobileAdapter_HandleByte((struct MobileAdapterGB*)driver, value & 0xFF);
+		break;
+	default:
+		break;
+	}
+
+	return value;
 }

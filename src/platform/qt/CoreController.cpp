@@ -1045,7 +1045,7 @@ void CoreController::attachMobileAdapter() {
 		}
 
 		GBA* gba = static_cast<GBA*>(thread->core->board);
-		//GBASIOSetDriver(&gba->sio, &m_adapter.d.gbaDriver, SIO_NORMAL_8); // TODO
+		GBASIOSetDriver(&gba->sio, &m_adapter.d.gbaDriver, SIO_NORMAL_8); // TODO
 	}
 
 	m_isMobileAdapterAttached = true;
