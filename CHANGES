@@ -27,6 +27,8 @@ Emulation fixes:
  - GBA Memory: Fix STM to VRAM (fixes mgba.io/i/1430)
  - GB Audio: Only reset channel 3 sample in DMG mode
  - GB Audio: Sample inactive channels (fixes mgba.io/i/1455, mgba.io/i/1456)
+ - GB Video: Increment BCPS/OCPS even in mode 3 (fixes mgba.io/i/1462)
+ - GB Audio: Deschedule channel 3 when disabled (fixes mgba.io/i/1463)
 Other fixes:
  - Qt: Fix some Qt display driver race conditions
  - Core: Improved lockstep driver reliability (Le Hoang Quyen)
@@ -37,6 +39,7 @@ Other fixes:
  - GB SIO: Fix lockstep failing games aren't reloaded
  - Core: Fix crash when exiting game with cheats loaded
  - GBA Cheats: Fix PARv3 Thumb hooks
+ - mGUI: Fix crash if last loaded ROM directory disappears (fixes mgba.io/i/1466)
 Misc:
  - GBA Savedata: EEPROM performance fixes
  - GBA Savedata: Automatically map 1Mbit Flash files as 1Mbit Flash
