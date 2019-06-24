@@ -992,6 +992,37 @@ CoreController::Interrupter::~Interrupter() {
 	mCoreThreadContinue(m_parent->thread());
 }
 
+static bool MobileAdapterGB_ReadConfig(struct MobileAdapterGB* adapter, uint8_t offset, uint8_t length,
+                                   unsigned char* output) {
+	QFile file("mobileadaptergb.dat");
+
+	if (!file.open(QIODevice::ReadWrite))
+		return false;
+
+	if (file.size() < 192) {
+		file.seek(0);
+		file.write(QByteArray(192, 0));
+	}
+
+	file.seek(offset);
+	file.read((char*)output, length);
+	file.close();
+	return true;
+}
+
+static void MobileAdapterGB_WriteConfig(struct MobileAdapterGB* adapter, uint8_t offset, uint8_t length,
+                                    const unsigned char* data) {
+
+	QFile file("mobileadaptergb.dat");
+
+	if (!file.open(QIODevice::ReadWrite))
+		return;
+
+	file.seek(offset);
+	file.write((const char*)data, length);
+	file.close();
+}
+
 void CoreController::attachMobileAdapter() {
 	Interrupter interrupter(this);
 
@@ -999,6 +1030,9 @@ void CoreController::attachMobileAdapter() {
 
 	MobileAdapterGBCreate(&m_adapter.d);
 	m_adapter.parent = this;
+
+	m_adapter.d.readConfiguration = MobileAdapterGB_ReadConfig;
+	m_adapter.d.saveConfiguration = MobileAdapterGB_WriteConfig;
 
 	if (platform() == PLATFORM_GB) {
 		GB* gb = static_cast<GB*>(m_threadContext.core->board);

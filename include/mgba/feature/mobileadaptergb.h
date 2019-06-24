@@ -40,7 +40,7 @@ enum MobileAdapterGBDevice {
 };
 
 struct MobileAdapterGBExternalServerData {
-	char address[256];
+	char address[16];
 	int port;
 	bool isConnectionOpened;
 };
@@ -63,16 +63,18 @@ struct MobileAdapterGB {
 
 	struct MobileAdapterGBExternalServerData server;
 
+	char internalServerBuffer[254];
+
 	bool (*dial)(struct MobileAdapterGB*, const char*);
 	void (*hangUp)(struct MobileAdapterGB*);
 	bool (*connect)(struct MobileAdapterGB*);
 	void (*disconnect)(struct MobileAdapterGB*);
-	const char* (*resolveDns)(struct MobileAdapterGB*);
-	const unsigned char* (*receiveDataFromServer)(struct MobileAdapterGB*);
-	const bool (*sendDataToServer)(struct MobileAdapterGB*, unsigned char*);
-	bool (*login)(struct MobileAdapterGB*, const char*, const char*);
+	char* (*resolveDns)(struct MobileAdapterGB*, const char*);
+	unsigned char* (*receiveDataFromServer)(struct MobileAdapterGB*, uint8_t*);
+	const bool (*sendDataToServer)(struct MobileAdapterGB*, uint8_t, unsigned char*);
+	bool (*login)(struct MobileAdapterGB*, uint8_t, const char*, uint8_t, const char*);
 	void (*logout)(struct MobileAdapterGB*);
-	bool (*readConfiguration)(struct MobileAdapterGB*, uint8_t, uint8_t, unsigned char*, uint8_t);
+	bool (*readConfiguration)(struct MobileAdapterGB*, uint8_t, uint8_t, unsigned char*);
 	void (*saveConfiguration)(struct MobileAdapterGB*, uint8_t, uint8_t, const unsigned char*);
 };
 
