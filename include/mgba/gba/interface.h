@@ -45,6 +45,9 @@ extern MGBA_EXPORT const int GBA_LUX_LEVELS[10];
 enum {
 	mPERIPH_GBA_LUMINANCE = 0x1000,
 	mPERIPH_GBA_BATTLECHIP_GATE,
+#ifdef BUILD_LIBMOBILE
+	mPERIPH_GBA_MOBILE_ADAPTER,
+#endif
 };
 
 bool GBAIsROM(struct VFile* vf);
@@ -87,6 +90,18 @@ struct GBASIOBattlechipGate {
 };
 
 void GBASIOBattlechipGateCreate(struct GBASIOBattlechipGate*);
+
+#ifdef BUILD_LIBMOBILE
+#include <mgba/feature/libmobile.h>
+
+struct GBASIOMobileAdapter {
+	struct GBASIODriver d;
+	struct mTimingEvent event;
+	struct mobile_adapter mobile;
+};
+
+void GBASIOMobileAdapterCreate(struct GBASIOMobileAdapter*, struct mobile_adapter_mgba*);
+#endif
 
 CXX_GUARD_END
 

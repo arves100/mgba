@@ -14,6 +14,10 @@
 
 #include "VFileDevice.h"
 
+#ifdef BUILD_LIBMOBILE
+#include "qtlibmobile.h"
+#endif
+
 #include <functional>
 #include <memory>
 
@@ -160,6 +164,11 @@ public slots:
 	void setBattleChipFlavor(int flavor);
 #endif
 
+#ifdef BUILD_LIBMOBILE
+	void attachMobileAdapter();
+	void detachMobileAdapter();
+#endif
+
 	void setAVStream(mAVStream*);
 	void clearAVStream();
 
@@ -259,6 +268,11 @@ private:
 #ifdef M_CORE_GBA
 	GBASIOBattlechipGate m_battlechip;
 	QByteArray m_eReaderData;
+
+#ifdef BUILD_LIBMOBILE
+	QMobileAdapter m_mobileadapter;
+#endif
+
 #endif
 };
 

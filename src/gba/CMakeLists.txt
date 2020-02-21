@@ -40,6 +40,10 @@ set(EXTRA_FILES
 	extra/audio-mixer.c
 	extra/battlechip.c
 	extra/proxy.c)
+	
+if (BUILD_LIBMOBILE)
+	list(APPEND EXTRA_FILES extra/mobileadapter.c)
+endif()
 
 set(DEBUGGER_FILES
 	debugger/cli.c)

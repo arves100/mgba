@@ -1343,6 +1343,13 @@ void Window::setupMenu(QMenuBar* menubar) {
 	m_platformActions.insert(PLATFORM_GBA, bcGate);
 #endif
 
+#ifdef BUILD_LIBMOBILE
+	Action* mobileAdapter = addGameAction(
+	    tr("Mobile Adapter GB"), "mobileAdapter", [this]() { m_controller->attachMobileAdapter();
+	// Todo: Gui #2
+	}, "emu");
+#endif
+
 	m_actions.addMenu(tr("Audio/&Video"), "av");
 	m_actions.addMenu(tr("Frame size"), "frame", "av");
 	for (int i = 1; i <= 8; ++i) {

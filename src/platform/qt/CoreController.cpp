@@ -814,6 +814,31 @@ void CoreController::setBattleChipFlavor(int flavor) {
 }
 #endif
 
+#ifdef BUILD_LIBMOBILE
+void CoreController::attachMobileAdapter() {
+	m_mobileadapter.data.platform = platform();
+	m_mobileadapter.data.extradata = &m_mobileadapter;
+
+	if (platform() != PLATFORM_GBA) {
+		return; // Todo #1
+	}
+
+
+	Interrupter interrupter(this);
+	GBASIOMobileAdapterCreate(&m_mobileadapter.gba, &m_mobileadapter.data);
+	m_threadContext.core->setPeripheral(m_threadContext.core, mPERIPH_GBA_MOBILE_ADAPTER, &m_mobileadapter.gba);
+}
+
+void CoreController::detachMobileAdapter() {
+	if (platform() != PLATFORM_GBA) {
+		return; // Todo #2
+	}
+
+	Interrupter interrupter(this);
+	m_threadContext.core->setPeripheral(m_threadContext.core, mPERIPH_GBA_MOBILE_ADAPTER, nullptr);
+}
+#endif
+
 void CoreController::setAVStream(mAVStream* stream) {
 	Interrupter interrupter(this);
 	m_threadContext.core->setAVStream(m_threadContext.core, stream);
