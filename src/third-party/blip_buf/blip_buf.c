@@ -141,7 +141,7 @@ void blip_set_rates( blip_t* m, double clock_rate, double sample_rate )
 	m->factor = (fixed_t) factor;
 	
 	/* Fails if clock_rate exceeds maximum, relative to sample_rate */
-	assert( 0 <= factor - m->factor && factor - m->factor < 1 );
+	//assert( 0 <= factor - m->factor && factor - m->factor < 1 );
 	
 	/* Avoid requiring math.h. Equivalent to
 	m->factor = (int) ceil( factor ) */

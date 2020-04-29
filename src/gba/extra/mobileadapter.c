@@ -43,7 +43,9 @@ void GBASIOMobileAdapterTimerEvent(struct mTiming* timing, void* user, uint32_t 
 	mobile_loop(&adapter->mobile);
 
 	adapter->d.p->p->memory.io[REG_SIOCNT] &= 8;
-	adapter->d.p->siocnt = GBASIONormalClearStart(adapter->d.p->siocnt);
+
+	if (adapter->mobile.serial.state = 
+	//adapter->d.p->siocnt = GBASIONormalClearStart(adapter->d.p->siocnt);
 	if (GBASIONormalIsIrq(adapter->d.p->siocnt)) {
 		GBARaiseIRQ(adapter->d.p->p, IRQ_SIO, cyclesLate);
 	}
