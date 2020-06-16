@@ -24,6 +24,11 @@
 
 #ifdef M_CORE_GB
 #include <mgba/internal/gb/sio/printer.h>
+
+#ifdef USE_LIBMOBILE
+#include <mgba/internal/gb/sio/mobilegb.h>
+#endif
+
 #endif
 
 #ifdef M_CORE_GBA
@@ -160,6 +165,14 @@ public slots:
 	void setBattleChipFlavor(int flavor);
 #endif
 
+#ifdef USE_LIBMOBILE
+	void attachMobileAdapter();
+	void detachMobileAdapter();
+	void setMobileAdapterType(int id);
+	mobile_action getMobileAction();
+	const mobile_adapter* getMobileAdapter();
+#endif
+
 	void setAVStream(mAVStream*);
 	void clearAVStream();
 
@@ -191,6 +204,10 @@ signals:
 	void logPosted(int level, int category, const QString& log);
 
 	void imagePrinted(const QImage&);
+
+#ifdef USE_LIBMOBILE
+	void mobileUpdate();
+#endif
 
 private:
 	void updateKeys();
@@ -249,15 +266,28 @@ private:
 	mVideoLogContext* m_vl = nullptr;
 	VFile* m_vlVf = nullptr;
 
+#ifdef USE_LIBMOBILE
+	bool m_loopMobile;
+#endif
+
 #ifdef M_CORE_GB
 	struct QGBPrinter {
 		GBPrinter d;
 		CoreController* parent;
 	} m_printer;
+#ifdef USE_LIBMOBILE
+	struct QGBMobileAdapter {
+		GBMobileAdapter d;
+		CoreController* parent;
+	} m_mobilegb;
+#endif
 #endif
 
 #ifdef M_CORE_GBA
 	GBASIOBattlechipGate m_battlechip;
+#ifdef USE_LIBMOBILE
+	GBASIOMobileAdapter m_mobilegba;
+#endif
 	QByteArray m_eReaderData;
 #endif
 };

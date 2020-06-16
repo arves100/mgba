@@ -36,6 +36,9 @@ CoreController::CoreController(mCore* core, QObject* parent)
 	: QObject(parent)
 	, m_saveStateFlags(SAVESTATE_SCREENSHOT | SAVESTATE_SAVEDATA | SAVESTATE_CHEATS | SAVESTATE_RTC)
 	, m_loadStateFlags(SAVESTATE_SCREENSHOT | SAVESTATE_RTC)
+#ifdef USE_LIBMOBILE
+	, m_loopMobile(false)
+#endif
 {
 	m_threadContext.core = core;
 	m_threadContext.userData = this;
@@ -98,6 +101,17 @@ CoreController::CoreController(mCore* core, QObject* parent)
 		}
 		++controller->m_autosaveCounter;
 
+#ifdef USE_LIBMOBILE
+		if (controller->m_loopMobile) {
+			if (controller->platform() == PLATFORM_GBA) {
+				mobile_loop(&controller->m_mobilegba.mobile.mobile);
+			} else {
+				mobile_loop(&controller->m_mobilegb.d.mobile.mobile);
+			}
+
+			QMetaObject::invokeMethod(controller, "mobileUpdate");
+		}
+#endif
 		controller->finishFrame();
 	};
 
@@ -823,6 +837,81 @@ void CoreController::setBattleChipFlavor(int flavor) {
 	}
 	Interrupter interrupter(this);
 	m_battlechip.flavor = flavor;
+}
+#endif
+
+#ifdef USE_LIBMOBILE
+void CoreController::setMobileAdapterType(int id) {
+	switch (id) {
+	default:
+		m_mobilegb.d.mobile.mobile.config.device = MOBILE_ADAPTER_BLUE;
+		m_mobilegba.mobile.mobile.config.device = MOBILE_ADAPTER_BLUE;
+		break;
+	case 3:
+		m_mobilegb.d.mobile.mobile.config.device = MOBILE_ADAPTER_GREEN;
+		m_mobilegba.mobile.mobile.config.device = MOBILE_ADAPTER_GREEN;
+		break;
+	case 1:
+		m_mobilegb.d.mobile.mobile.config.device = MOBILE_ADAPTER_YELLOW;
+		m_mobilegba.mobile.mobile.config.device = MOBILE_ADAPTER_YELLOW;
+		break;
+	case 2:
+		m_mobilegb.d.mobile.mobile.config.device = MOBILE_ADAPTER_RED;
+		m_mobilegba.mobile.mobile.config.device = MOBILE_ADAPTER_RED;
+		break;
+	}
+}
+
+void CoreController::attachMobileAdapter() {
+	Interrupter interrupter(this);
+	clearMultiplayerController();
+
+	m_loopMobile = true;
+
+	if (platform() == PLATFORM_GBA) {
+		GBASIOMobileAdapterCreate(&m_mobilegba);
+
+		GBA* gb = static_cast<GBA*>(m_threadContext.core->board);
+		m_mobilegba.mobile.timing = &gb->timing;
+
+		m_threadContext.core->setPeripheral(m_threadContext.core, mPERIPH_GBA_MOBILEADAPTER, &m_mobilegba);
+	}
+
+	GBMobileAdapterCreate(&m_mobilegb.d);
+	m_mobilegb.parent = this;
+
+	GB* gb = static_cast<GB*>(m_threadContext.core->board);
+	m_mobilegb.d.mobile.timing = &gb->timing;
+
+	GBSIOSetDriver(&gb->sio, &m_mobilegb.d.d);
+}
+
+void CoreController::detachMobileAdapter() {
+	m_loopMobile = false;
+
+	if (platform() == PLATFORM_GBA) {
+		Interrupter interrupter(this);
+		m_threadContext.core->setPeripheral(m_threadContext.core, mPERIPH_GBA_MOBILEADAPTER, nullptr);
+		return;
+	}
+
+	Interrupter interrupter(this);
+	GB* gb = static_cast<GB*>(m_threadContext.core->board);
+	GBSIOSetDriver(&gb->sio, nullptr);
+}
+
+mobile_action CoreController::getMobileAction() {
+	if (platform() == PLATFORM_GBA)
+		return mobile_action_get(&m_mobilegba.mobile.mobile);
+
+	return mobile_action_get(&m_mobilegb.d.mobile.mobile);
+}
+
+const mobile_adapter* CoreController::getMobileAdapter() {
+	if (platform() == PLATFORM_GBA)
+		return &m_mobilegba.mobile.mobile;
+
+	return &m_mobilegb.d.mobile.mobile;
 }
 #endif
 

@@ -56,6 +56,10 @@
 #include "VideoProxy.h"
 #include "VideoView.h"
 
+#ifdef USE_LIBMOBILE
+#include "MobileAdapterView.h"
+#endif
+
 #ifdef USE_DISCORD_RPC
 #include "DiscordCoordinator.h"
 #endif
@@ -1341,6 +1345,10 @@ void Window::setupMenu(QMenuBar* menubar) {
 #ifdef M_CORE_GBA
 	Action* bcGate = addGameAction(tr("BattleChip Gate..."), "bcGate", openControllerTView<BattleChipView>(this), "emu");
 	m_platformActions.insert(PLATFORM_GBA, bcGate);
+#endif
+
+#ifdef USE_LIBMOBILE
+	addGameAction(tr("Mobile Adapter GB..."), "cgbAdapter", openControllerTView<MobileAdapterView>(this), "emu");
 #endif
 
 	m_actions.addMenu(tr("Audio/&Video"), "av");

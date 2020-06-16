@@ -13,6 +13,10 @@ CXX_GUARD_START
 #include <mgba/core/interface.h>
 #include <mgba/core/timing.h>
 
+#ifdef USE_LIBMOBILE
+#include <mgba/feature/mobile.h>
+#endif
+
 enum {
 	GBA_VIDEO_HORIZONTAL_PIXELS = 240,
 	GBA_VIDEO_VERTICAL_PIXELS = 160,
@@ -45,6 +49,9 @@ extern MGBA_EXPORT const int GBA_LUX_LEVELS[10];
 enum {
 	mPERIPH_GBA_LUMINANCE = 0x1000,
 	mPERIPH_GBA_BATTLECHIP_GATE,
+#ifdef USE_LIBMOBILE
+	mPERIPH_GBA_MOBILEADAPTER,
+#endif
 };
 
 bool GBAIsROM(struct VFile* vf);
@@ -85,6 +92,17 @@ struct GBASIOBattlechipGate {
 	int state;
 	int flavor;
 };
+
+#ifdef USE_LIBMOBILE
+struct GBASIOMobileAdapter {
+	struct GBASIODriver d;
+	struct mTimingEvent event;
+	struct mMobileAdapter mobile;
+	unsigned char nextbyte;
+};
+
+void GBASIOMobileAdapterCreate(struct GBASIOMobileAdapter*);
+#endif
 
 void GBASIOBattlechipGateCreate(struct GBASIOBattlechipGate*);
 

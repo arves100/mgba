@@ -48,6 +48,10 @@ set(DEBUGGER_FILES
 set(TEST_FILES
 	test/cheats.c
 	test/core.c)
+	
+if(USE_LIBMOBILE)
+	list(APPEND EXTRA_FILES extra/mobilegba.c)
+endif()
 
 source_group("GBA board" FILES ${SOURCE_FILES})
 source_group("GBA extras" FILES ${EXTRA_FILES} ${SIO_FILES})

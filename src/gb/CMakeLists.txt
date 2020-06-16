@@ -33,6 +33,10 @@ set(TEST_FILES
 	test/mbc.c
 	test/memory.c
 	test/rtc.c)
+	
+if(USE_LIBMOBILE)
+	list(APPEND SIO_FILES sio/mobilegb.c)
+endif()
 
 source_group("GB board" FILES ${SOURCE_FILES})
 source_group("GB extras" FILES ${EXTRA_FILES} ${SIO_FILES})

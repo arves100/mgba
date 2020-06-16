@@ -215,6 +215,11 @@ if(USE_DISCORD_RPC)
 	list(APPEND SOURCE_FILES DiscordCoordinator.cpp)
 endif()
 
+if(USE_LIBMOBILE)
+	list(APPEND SOURCE_FILES MobileAdapterView.cpp)
+	list(APPEND UI_FILES MobileAdapterView.ui)
+endif()
+
 qt5_add_resources(RESOURCES resources.qrc)
 if(APPLE)
 	set(MACOSX_BUNDLE_ICON_FILE mgba.icns)

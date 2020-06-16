@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MobileAdapterView</class>
+ <widget class="QDialog" name="MobileAdapterView">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>758</width>
+    <height>286</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Mobile Adapter GB</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_4">
+   <item>
+    <layout class="QFormLayout" name="adapterStatusLayout">
+     <item row="1" column="0">
+      <widget class="QLabel" name="adapterStatusNameLabel">
+       <property name="text">
+        <string>Status:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QLabel" name="adapterStatusLabel">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QCheckBox" name="sessionBegunBox">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Session begun</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QCheckBox" name="mode32Box">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>32-bit mode</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QFormLayout" name="configLayout">
+     <item row="5" column="0">
+      <widget class="QLabel" name="p2pPortLabel">
+       <property name="text">
+        <string>P2P Port:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="1">
+      <widget class="QSpinBox" name="p2pPortEdit">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>65535</number>
+       </property>
+       <property name="value">
+        <number>2415</number>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="0">
+      <widget class="QLabel" name="serverDomainLabel">
+       <property name="text">
+        <string>Server domain:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <widget class="QLineEdit" name="serverDomainEdit"/>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="dnsLabel">
+       <property name="text">
+        <string>DNS:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QLineEdit" name="dnsEdit"/>
+     </item>
+     <item row="0" column="0">
+      <widget class="QLabel" name="usernameLabel">
+       <property name="text">
+        <string>Username:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="passwordLebel">
+       <property name="text">
+        <string>Password:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QLineEdit" name="usernameEdit"/>
+     </item>
+     <item row="1" column="1">
+      <widget class="QLineEdit" name="passwordEdit"/>
+     </item>
+     <item row="6" column="0">
+      <widget class="QLabel" name="adapterTypelabel">
+       <property name="text">
+        <string>Adapter type:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="1">
+      <widget class="QComboBox" name="adapterTypeCombo">
+       <property name="currentText">
+        <string>PDC (Blue)</string>
+       </property>
+       <property name="currentIndex">
+        <number>0</number>
+       </property>
+       <item>
+        <property name="text">
+         <string>PDC (Blue)</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>CDMAone (Yellow)</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>DDI (Red)</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>PHS (Green)</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="inputLayout">
+     <item>
+      <widget class="QPushButton" name="closeButton">
+       <property name="text">
+        <string>Close</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>closeButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MobileAdapterView</receiver>
+   <slot>closeButtonClick()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>701</x>
+     <y>394</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>378</x>
+     <y>209</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>p2pPortEdit</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>MobileAdapterView</receiver>
+   <slot>p2pPortChanged(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>426</x>
+     <y>361</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>378</x>
+     <y>209</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>serverDomainEdit</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>MobileAdapterView</receiver>
+   <slot>serverDomainChanged(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>426</x>
+     <y>333</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>378</x>
+     <y>209</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>adapterTypeCombo</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>MobileAdapterView</receiver>
+   <slot>adapterTypeChanged(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>426</x>
+     <y>305</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>378</x>
+     <y>209</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>dnsEdit</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>MobileAdapterView</receiver>
+   <slot>dnsChanged(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>426</x>
+     <y>262</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>378</x>
+     <y>209</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>passwordEdit</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>MobileAdapterView</receiver>
+   <slot>passwordChanged(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>426</x>
+     <y>234</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>378</x>
+     <y>209</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>usernameEdit</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>MobileAdapterView</receiver>
+   <slot>usernameChanged(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>426</x>
+     <y>206</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>378</x>
+     <y>209</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>closeButtonClick()</slot>
+  <slot>resetButtonClick()</slot>
+  <slot>p2pPortChanged(int)</slot>
+  <slot>serverDomainChanged(QString)</slot>
+  <slot>adapterTypeChanged(int)</slot>
+  <slot>usernameChanged(QString)</slot>
+  <slot>passwordChanged(QString)</slot>
+  <slot>dnsChanged(QString)</slot>
+ </slots>
+</ui>
