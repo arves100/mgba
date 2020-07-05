@@ -8,14 +8,13 @@
 #include "MobileAdapterView.h"
 
 #include "CoreController.h"
+#include "ConfigController.h"
 #include "Window.h"
 
 using namespace QGBA;
 
 MobileAdapterView::MobileAdapterView(std::shared_ptr<CoreController> controller, Window* window, QWidget* parent)
 	: QDialog(parent, Qt::WindowTitleHint | Qt::WindowSystemMenuHint | Qt::WindowCloseButtonHint),
-	m_serial(""),
-	m_config(192, 0),
 	m_controller(controller),
 	m_window(window)
 {
@@ -26,6 +25,12 @@ MobileAdapterView::MobileAdapterView(std::shared_ptr<CoreController> controller,
 	m_controller->attachMobileAdapter();
 
     Reset();
+
+    struct mMobileAdapter* mobile = m_controller->getMobileAdapter();
+	m_ui.p2pPortEdit->setValue(mobile->mobile.config.p2p_port);
+	m_ui.adapterTypeCombo->setCurrentIndex(mobile->mobile.config.device - 8);
+
+	m_ui.serverDomainEdit->setText(mobile->server);
 }
 
 MobileAdapterView::~MobileAdapterView() {
@@ -43,7 +48,7 @@ void MobileAdapterView::frameCallback() {
         return;
     }
 
-    Update(m_controller->getMobileAdapter());
+    Update(&m_controller->getMobileAdapter()->mobile);
 }
 
 // UI updates
@@ -78,17 +83,18 @@ void MobileAdapterView::closeButtonClick() {
 }
 
 void MobileAdapterView::p2pPortChanged(int value) {
-    //m_mobile.config.p2p_port = (unsigned int)value;
-    // ¡×todo
+	m_controller->getMobileAdapter()->mobile.config.p2p_port = value;
 }
 
 void MobileAdapterView::serverDomainChanged(QString str) {
-    //m_domain = str;
-    // ¡×todo
+    m_controller->setServerIp(str);
 }
 
 void MobileAdapterView::adapterTypeChanged(int value) {
-    m_controller->setMobileAdapterType(value);
+	if (value < 0 || value > 3)
+		value = 0;
+
+	m_controller->getMobileAdapter()->mobile.config.device = (enum mobile_adapter_device)(value + 8);
 }
 
 void MobileAdapterView::usernameChanged(QString str) {

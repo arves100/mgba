@@ -27,6 +27,9 @@
 #endif
 #include <mgba-util/math.h>
 #include <mgba-util/vfs.h>
+#ifdef USE_LIBMOBILE
+#include <QHostAddress>
+#endif
 
 #define AUTOSAVE_GRANULARITY 600
 
@@ -42,6 +45,10 @@ CoreController::CoreController(mCore* core, QObject* parent)
 {
 	m_threadContext.core = core;
 	m_threadContext.userData = this;
+
+#ifdef USE_LIBMOBILE
+	mMobile_init(&m_mobile);
+#endif
 
 	m_resetActions.append([this]() {
 		if (m_autoload) {
@@ -103,12 +110,7 @@ CoreController::CoreController(mCore* core, QObject* parent)
 
 #ifdef USE_LIBMOBILE
 		if (controller->m_loopMobile) {
-			if (controller->platform() == PLATFORM_GBA) {
-				mobile_loop(&controller->m_mobilegba.mobile.mobile);
-			} else {
-				mobile_loop(&controller->m_mobilegb.d.mobile.mobile);
-			}
-
+			mobile_loop(&controller->m_mobile.mobile);
 			QMetaObject::invokeMethod(controller, "mobileUpdate");
 		}
 #endif
@@ -198,6 +200,24 @@ CoreController::CoreController(mCore* core, QObject* parent)
 }
 
 CoreController::~CoreController() {
+#ifdef USE_LIBMOBILE
+	// 」todo: modify this
+	m_config->setOption("AdapterServer", m_mobile.server);
+	m_config->setOption("AdapterP2PPort", m_mobile.mobile.config.p2p_port);
+	m_config->setOption("AdapterType", ((int) m_mobile.mobile.config.device) - 8);
+
+	QString rawConfig = ConfigController::configDir();
+	rawConfig.append(QDir::separator());
+	rawConfig.append("mobile.dat");
+
+	QFile file(rawConfig);
+
+	if (file.open(QIODevice::WriteOnly)) {
+		file.write((const char*)m_mobile.config, 192);
+		file.close();
+	}
+#endif
+
 	endVideoLog();
 	stop();
 	disconnect();
@@ -261,6 +281,11 @@ QSize CoreController::screenDimensions() const {
 	return QSize(width, height);
 }
 
+#ifdef USE_LIBMOBILE
+// 」todo: Waiting...
+extern "C" unsigned char mobile_board_dns_ip[4];
+#endif
+
 void CoreController::loadConfig(ConfigController* config) {
 	Interrupter interrupter(this);
 	m_loadStateFlags = config->getOption("loadStateExtdata", m_loadStateFlags).toInt();
@@ -282,6 +307,42 @@ void CoreController::loadConfig(ConfigController* config) {
 		updateFastForward();
 		mCoreThreadRewindParamsChanged(&m_threadContext);
 	}
+
+#ifdef USE_LIBMOBILE
+	// 」note: ISP login is not handled by libmobile
+	//QString username = config->getOption("AdapterUsername", "");
+	//QString password = config->getOption("AdapterPassword", "");
+
+	// 」note: Waiting....
+	//QString dns1 = config->getOption("AdapterDns1", "");
+	//QString dns2 = config->getOption("AdapterDns2", "");
+
+	QString server = config->getOption("AdapterServer", "");
+	setServerIp(server);
+
+	m_mobile.mobile.config.p2p_port = config->getOption("AdapterP2PPort", 2415).toInt();
+	m_mobile.mobile.config.device = (enum mobile_adapter_device)(config->getOption("AdapterType", 0).toInt() + 8);
+
+	QString rawConfig = ConfigController::configDir();
+	rawConfig.append(QDir::separator());
+	rawConfig.append("mobile.dat");
+
+	QFileInfo info(rawConfig);
+
+	if (info.exists()) {
+		if (info.size() == 192) {
+			QFile file(rawConfig);
+			if (file.open(QIODevice::ReadOnly | QIODevice::ExistingOnly)) {
+				// Config exists so load the data
+				QByteArray config = file.read(192);
+				memcpy(m_mobile.config, config.data(), 192);
+				file.close();
+			}
+		}
+	}
+
+	m_config = config; // 」todo: very bad
+#endif
 }
 
 #ifdef USE_DEBUGGERS
@@ -841,48 +902,45 @@ void CoreController::setBattleChipFlavor(int flavor) {
 #endif
 
 #ifdef USE_LIBMOBILE
-void CoreController::setMobileAdapterType(int id) {
-	switch (id) {
-	default:
-		m_mobilegb.d.mobile.mobile.config.device = MOBILE_ADAPTER_BLUE;
-		m_mobilegba.mobile.mobile.config.device = MOBILE_ADAPTER_BLUE;
-		break;
-	case 3:
-		m_mobilegb.d.mobile.mobile.config.device = MOBILE_ADAPTER_GREEN;
-		m_mobilegba.mobile.mobile.config.device = MOBILE_ADAPTER_GREEN;
-		break;
-	case 1:
-		m_mobilegb.d.mobile.mobile.config.device = MOBILE_ADAPTER_YELLOW;
-		m_mobilegba.mobile.mobile.config.device = MOBILE_ADAPTER_YELLOW;
-		break;
-	case 2:
-		m_mobilegb.d.mobile.mobile.config.device = MOBILE_ADAPTER_RED;
-		m_mobilegba.mobile.mobile.config.device = MOBILE_ADAPTER_RED;
-		break;
-	}
+void CoreController::setServerIp(const QString& ip) {
+	QHostAddress hst;
+	hst.setAddress(ip);
+	uint32_t ipv4 = hst.toIPv4Address();
+
+	mobile_board_dns_ip[3] = ipv4 & 0xFF;
+	mobile_board_dns_ip[2] = (ipv4 >> 8) & 0xFF;
+	mobile_board_dns_ip[1] = (ipv4 >> 16) & 0xFF;
+	mobile_board_dns_ip[0] = (ipv4 >> 24) & 0xFF;
+
+	strncpy(m_mobile.server, ip.toStdString().c_str(), 255);
 }
 
 void CoreController::attachMobileAdapter() {
 	Interrupter interrupter(this);
 	clearMultiplayerController();
 
+	mMobile_clear(&m_mobile);
 	m_loopMobile = true;
 
 	if (platform() == PLATFORM_GBA) {
+		m_mobilegba.mobile = &m_mobile;
+
 		GBASIOMobileAdapterCreate(&m_mobilegba);
 
 		GBA* gb = static_cast<GBA*>(m_threadContext.core->board);
-		m_mobilegba.mobile.timing = &gb->timing;
 
+		m_mobile.timing = &gb->timing;
 		m_threadContext.core->setPeripheral(m_threadContext.core, mPERIPH_GBA_MOBILEADAPTER, &m_mobilegba);
+		return;
 	}
+
+	m_mobilegb.d.mobile = &m_mobile;
 
 	GBMobileAdapterCreate(&m_mobilegb.d);
 	m_mobilegb.parent = this;
-
 	GB* gb = static_cast<GB*>(m_threadContext.core->board);
-	m_mobilegb.d.mobile.timing = &gb->timing;
 
+	m_mobile.timing = &gb->timing;
 	GBSIOSetDriver(&gb->sio, &m_mobilegb.d.d);
 }
 
@@ -901,17 +959,11 @@ void CoreController::detachMobileAdapter() {
 }
 
 mobile_action CoreController::getMobileAction() {
-	if (platform() == PLATFORM_GBA)
-		return mobile_action_get(&m_mobilegba.mobile.mobile);
-
-	return mobile_action_get(&m_mobilegb.d.mobile.mobile);
+	return mobile_action_get(&m_mobile.mobile);
 }
 
-const mobile_adapter* CoreController::getMobileAdapter() {
-	if (platform() == PLATFORM_GBA)
-		return &m_mobilegba.mobile.mobile;
-
-	return &m_mobilegb.d.mobile.mobile;
+struct mMobileAdapter* CoreController::getMobileAdapter() {
+	return &m_mobile;
 }
 #endif
 

@@ -147,12 +147,12 @@
        </item>
        <item>
         <property name="text">
-         <string>DDI (Red)</string>
+         <string>PHS (Green)</string>
         </property>
        </item>
        <item>
         <property name="text">
-         <string>PHS (Green)</string>
+         <string>DDI (Red)</string>
         </property>
        </item>
       </widget>

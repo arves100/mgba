@@ -97,7 +97,7 @@ struct GBASIOBattlechipGate {
 struct GBASIOMobileAdapter {
 	struct GBASIODriver d;
 	struct mTimingEvent event;
-	struct mMobileAdapter mobile;
+	struct mMobileAdapter* mobile;
 	unsigned char nextbyte;
 };
 

@@ -27,6 +27,7 @@
 
 #ifdef USE_LIBMOBILE
 #include <mgba/internal/gb/sio/mobilegb.h>
+#include <mgba/feature/mobile.h>
 #endif
 
 #endif
@@ -168,9 +169,9 @@ public slots:
 #ifdef USE_LIBMOBILE
 	void attachMobileAdapter();
 	void detachMobileAdapter();
-	void setMobileAdapterType(int id);
+	void setServerIp(const QString& ip);
 	mobile_action getMobileAction();
-	const mobile_adapter* getMobileAdapter();
+	struct mMobileAdapter* getMobileAdapter();
 #endif
 
 	void setAVStream(mAVStream*);
@@ -268,6 +269,9 @@ private:
 
 #ifdef USE_LIBMOBILE
 	bool m_loopMobile;
+	struct mMobileAdapter m_mobile;
+
+	ConfigController* m_config; // ¡×todo: modify this into something better
 #endif
 
 #ifdef M_CORE_GB
@@ -290,6 +294,7 @@ private:
 #endif
 	QByteArray m_eReaderData;
 #endif
+
 };
 
 }

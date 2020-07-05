@@ -24,9 +24,11 @@ struct mMobileAdapter {
 	unsigned char config[192];
 	struct mTiming* timing;
 	int32_t timeLeach;
+	char server[256];
 };
 
 void mMobile_init(struct mMobileAdapter* adapter);
+void mMobile_clear(struct mMobileAdapter* adapter);
 
 CXX_GUARD_END
 

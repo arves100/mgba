@@ -16,8 +16,6 @@ static uint16_t GBASIOMobileAdapterWriteRegister(struct GBASIODriver* driver, ui
 static void GBASIOMobileAdapterTimerEvent(struct mTiming* timing, void* user, uint32_t cyclesLate);
 
 void GBASIOMobileAdapterCreate(struct GBASIOMobileAdapter* adapter) { 
-    mMobile_init(&adapter->mobile);
-
 	adapter->d.init = NULL;
 	adapter->d.deinit = NULL;
 	adapter->d.load = GBASIOMobileAdapterReset;
@@ -33,7 +31,7 @@ void GBASIOMobileAdapterCreate(struct GBASIOMobileAdapter* adapter) {
 
 bool GBASIOMobileAdapterReset(struct GBASIODriver* driver) {
 	struct GBASIOMobileAdapter* adapter = (struct GBASIOMobileAdapter*) driver;
-	mobile_serial_reset(&adapter->mobile.mobile);
+	mobile_serial_reset(&adapter->mobile->mobile);
 	return true;
 }
 
@@ -60,7 +58,7 @@ uint16_t GBASIOMobileAdapterWriteRegister(struct GBASIODriver* driver, uint32_t 
 		}
 		break;
 	case REG_SIODATA8: {
-		unsigned char last = mobile_transfer(&adapter->mobile.mobile, (unsigned char)value);
+		unsigned char last = mobile_transfer(&adapter->mobile->mobile, (unsigned char)value);
 		value = adapter->nextbyte;
 		adapter->nextbyte = last;
 		break;

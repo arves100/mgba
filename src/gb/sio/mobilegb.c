@@ -15,8 +15,6 @@ static uint8_t GBAdapterWriteSC(struct GBSIODriver* driver, uint8_t value);
 static bool GBAdapterReset(struct GBSIODriver* driver);
 
 void GBMobileAdapterCreate(struct GBMobileAdapter* adapter) {
-    mMobile_init(&adapter->mobile);
-
 	adapter->byte = 0;
 	adapter->next = 0xD2;
 
@@ -28,7 +26,7 @@ void GBMobileAdapterCreate(struct GBMobileAdapter* adapter) {
 
 void GBAdapterWriteSB(struct GBSIODriver* driver, uint8_t value) { 
 	struct GBMobileAdapter* adapter = (struct GBMobileAdapter*) driver;
-	adapter->next = mobile_transfer(&adapter->mobile.mobile, adapter->byte);
+	adapter->next = mobile_transfer(&adapter->mobile->mobile, adapter->byte);
 	adapter->byte = value;
 }
 
@@ -43,6 +41,6 @@ static uint8_t GBAdapterWriteSC(struct GBSIODriver* driver, uint8_t value) {
 
 static bool GBAdapterReset(struct GBSIODriver* driver) { 
 	struct GBMobileAdapter* adapter = (struct GBMobileAdapter*) driver;
-	mobile_serial_reset(&adapter->mobile.mobile);
+	mobile_serial_reset(&adapter->mobile->mobile);
 	return true;
 }

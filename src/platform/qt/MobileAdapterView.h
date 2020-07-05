@@ -19,6 +19,7 @@
 namespace QGBA {
 
 class CoreController;
+class ConfigController;
 class Window;
 
 class MobileAdapterView : public QDialog {
@@ -31,11 +32,6 @@ public:
 	void frameCallback();
 
 private:
-	QMutex m_serialmutex;
-	QString m_serial;
-	QByteArray m_config;
-	QDateTime m_timelatch;
-
 	std::shared_ptr<CoreController> m_controller;
 	Window* m_window;
 
