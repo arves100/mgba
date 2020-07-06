@@ -24,7 +24,7 @@ struct mMobileAdapter {
 	unsigned char config[192];
 	struct mTiming* timing;
 	int32_t timeLeach;
-	char server[256];
+	uint32_t serverip;
 };
 
 void mMobile_init(struct mMobileAdapter* adapter);

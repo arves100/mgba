@@ -16,7 +16,7 @@ mLOG_DEFINE_CATEGORY(MOBILEADAPTER, "Mobile Adapter", "feature.mobileadapter");
 
 #define USER1 struct mMobileAdapter* adapter = (struct mMobileAdapter*)user; if (!adapter) return;
 #define USER2(ret) struct mMobileAdapter* adapter = (struct mMobileAdapter*)user; if (!adapter) return ret;
-#define DEBUGCMD_BUFFERSIZE (MOBILE_MAX_DATA_SIZE*3)+100
+#define DEBUGCMD_BUFFERSIZE 1024
 
 void mMobile_init(struct mMobileAdapter* adapter) { 
     mobile_init(&adapter->mobile, adapter, NULL);
@@ -27,26 +27,30 @@ void mMobile_init(struct mMobileAdapter* adapter) {
 
 void mMobile_clear(struct mMobileAdapter* adapter) {
 	adapter->timeLeach = 0;
+	adapter->mobile.commands.session_begun = false;
 	memset(adapter->socket, INVALID_SOCKET, sizeof(adapter->socket));
 
     for (int i = 0; i < MOBILE_MAX_CONNECTIONS; i++) {
 		SocketClose(adapter->socket[i]);
 		adapter->socket[i] = INVALID_SOCKET;
+		adapter->mobile.commands.connections[i] = false;
     }
+
+    mobile_serial_reset(&adapter->mobile);
 }
 
 void mobile_board_debug_cmd(void *user, const int send, const struct mobile_packet *packet) {
     char buffer[DEBUGCMD_BUFFERSIZE];
-    size_t l;
+	size_t l;
     USER1;
 
     memset(buffer, 0, sizeof(buffer));
 
     snprintf(buffer, DEBUGCMD_BUFFERSIZE, "Command: %02X (Length: %u)\nData:\n", packet->command, packet->length);
-    l = strlen(buffer) + 1;
+    l = strlen(buffer);
 
     for (unsigned int i = 0; i < packet->length; i++) {
-	    snprintf(buffer+l+i, DEBUGCMD_BUFFERSIZE-l-i, "\t%d", hexDigit(packet->data[i]));
+	    snprintf(buffer+l+(i*3), DEBUGCMD_BUFFERSIZE-l-(i*3), "\t%02x", packet->data[i]);
     }
 
     mLOG(MOBILEADAPTER, DEBUG, buffer);
@@ -84,12 +88,7 @@ bool mobile_board_tcp_connect(void *user, unsigned conn, const unsigned char *ho
     USER2(false);
     
     addr.version = IPV4;
-	addr.ipv4 = 0;
-
-	for (int i = 0; i < 4; ++i) {
-		addr.ipv4 <<= 8;
-		addr.ipv4 += host[i];
-	}
+	addr.ipv4 = adapter->serverip;
 
     sock = SocketConnectTCP(port, &addr);
     if (sock == INVALID_SOCKET)
@@ -150,22 +149,17 @@ bool mobile_board_tcp_send(void *user, unsigned conn, const void *data, const un
 }
 
 int mobile_board_tcp_receive(void *user, unsigned conn, void *data) {
+	Socket pollSocket;
     USER2(-1);
 
     if (adapter->socket[conn] == INVALID_SOCKET)
         return -1;
 
-    if (!SocketPoll(1, &adapter->socket[conn], NULL, NULL, 0))
+    pollSocket = adapter->socket[conn];
+    if (!SocketPoll(1, &pollSocket, NULL, NULL, 0))
         return 0;
 
-    return SocketRecv(adapter->socket[conn], data, MOBILE_MAX_DATA_SIZE - 1);
-}
-
-unsigned char mobile_board_dns_ip[4]; // workaround for libmobile
-
-bool mobile_board_dns_query(unsigned char *ip, const char *host, const unsigned char  *dns1, const unsigned char *dns2) {
-    memcpy(ip, mobile_board_dns_ip, 4);
-    return true;
+    return SocketRecv(pollSocket, data, MOBILE_MAX_TCP_SIZE);
 }
 
 void mobile_board_time_latch(void *user) { 

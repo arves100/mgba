@@ -11,6 +11,8 @@
 #include "ConfigController.h"
 #include "Window.h"
 
+#include <QHostAddress>
+
 using namespace QGBA;
 
 MobileAdapterView::MobileAdapterView(std::shared_ptr<CoreController> controller, Window* window, QWidget* parent)
@@ -30,7 +32,7 @@ MobileAdapterView::MobileAdapterView(std::shared_ptr<CoreController> controller,
 	m_ui.p2pPortEdit->setValue(mobile->mobile.config.p2p_port);
 	m_ui.adapterTypeCombo->setCurrentIndex(mobile->mobile.config.device - 8);
 
-	m_ui.serverDomainEdit->setText(mobile->server);
+	m_ui.serverDomainEdit->setText(QHostAddress(mobile->serverip).toString());
 }
 
 MobileAdapterView::~MobileAdapterView() {
@@ -87,7 +89,7 @@ void MobileAdapterView::p2pPortChanged(int value) {
 }
 
 void MobileAdapterView::serverDomainChanged(QString str) {
-    m_controller->setServerIp(str);
+	m_controller->getMobileAdapter()->serverip = QHostAddress(str).toIPv4Address();
 }
 
 void MobileAdapterView::adapterTypeChanged(int value) {

@@ -202,7 +202,7 @@ CoreController::CoreController(mCore* core, QObject* parent)
 CoreController::~CoreController() {
 #ifdef USE_LIBMOBILE
 	// ¡×todo: modify this
-	m_config->setOption("AdapterServer", m_mobile.server);
+	m_config->setOption("AdapterServer", QHostAddress(m_mobile.serverip).toString());
 	m_config->setOption("AdapterP2PPort", m_mobile.mobile.config.p2p_port);
 	m_config->setOption("AdapterType", ((int) m_mobile.mobile.config.device) - 8);
 
@@ -281,11 +281,6 @@ QSize CoreController::screenDimensions() const {
 	return QSize(width, height);
 }
 
-#ifdef USE_LIBMOBILE
-// ¡×todo: Waiting...
-extern "C" unsigned char mobile_board_dns_ip[4];
-#endif
-
 void CoreController::loadConfig(ConfigController* config) {
 	Interrupter interrupter(this);
 	m_loadStateFlags = config->getOption("loadStateExtdata", m_loadStateFlags).toInt();
@@ -318,7 +313,7 @@ void CoreController::loadConfig(ConfigController* config) {
 	//QString dns2 = config->getOption("AdapterDns2", "");
 
 	QString server = config->getOption("AdapterServer", "");
-	setServerIp(server);
+	m_mobile.serverip = QHostAddress(server).toIPv4Address();
 
 	m_mobile.mobile.config.p2p_port = config->getOption("AdapterP2PPort", 2415).toInt();
 	m_mobile.mobile.config.device = (enum mobile_adapter_device)(config->getOption("AdapterType", 0).toInt() + 8);
@@ -902,19 +897,6 @@ void CoreController::setBattleChipFlavor(int flavor) {
 #endif
 
 #ifdef USE_LIBMOBILE
-void CoreController::setServerIp(const QString& ip) {
-	QHostAddress hst;
-	hst.setAddress(ip);
-	uint32_t ipv4 = hst.toIPv4Address();
-
-	mobile_board_dns_ip[3] = ipv4 & 0xFF;
-	mobile_board_dns_ip[2] = (ipv4 >> 8) & 0xFF;
-	mobile_board_dns_ip[1] = (ipv4 >> 16) & 0xFF;
-	mobile_board_dns_ip[0] = (ipv4 >> 24) & 0xFF;
-
-	strncpy(m_mobile.server, ip.toStdString().c_str(), 255);
-}
-
 void CoreController::attachMobileAdapter() {
 	Interrupter interrupter(this);
 	clearMultiplayerController();

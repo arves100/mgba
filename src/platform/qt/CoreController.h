@@ -169,7 +169,6 @@ public slots:
 #ifdef USE_LIBMOBILE
 	void attachMobileAdapter();
 	void detachMobileAdapter();
-	void setServerIp(const QString& ip);
 	mobile_action getMobileAction();
 	struct mMobileAdapter* getMobileAdapter();
 #endif
