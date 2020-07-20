@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>758</width>
-    <height>286</height>
+    <height>308</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -60,14 +60,14 @@
    </item>
    <item>
     <layout class="QFormLayout" name="configLayout">
-     <item row="5" column="0">
+     <item row="6" column="0">
       <widget class="QLabel" name="p2pPortLabel">
        <property name="text">
         <string>P2P Port:</string>
        </property>
       </widget>
      </item>
-     <item row="5" column="1">
+     <item row="6" column="1">
       <widget class="QSpinBox" name="p2pPortEdit">
        <property name="minimum">
         <number>1</number>
@@ -80,14 +80,14 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="0">
+     <item row="5" column="0">
       <widget class="QLabel" name="serverDomainLabel">
        <property name="text">
         <string>Server domain:</string>
        </property>
       </widget>
      </item>
-     <item row="4" column="1">
+     <item row="5" column="1">
       <widget class="QLineEdit" name="serverDomainEdit"/>
      </item>
      <item row="2" column="0">
@@ -120,14 +120,14 @@
      <item row="1" column="1">
       <widget class="QLineEdit" name="passwordEdit"/>
      </item>
-     <item row="6" column="0">
+     <item row="7" column="0">
       <widget class="QLabel" name="adapterTypelabel">
        <property name="text">
         <string>Adapter type:</string>
        </property>
       </widget>
      </item>
-     <item row="6" column="1">
+     <item row="7" column="1">
       <widget class="QComboBox" name="adapterTypeCombo">
        <property name="currentText">
         <string>PDC (Blue)</string>
@@ -156,6 +156,16 @@
         </property>
        </item>
       </widget>
+     </item>
+     <item row="4" column="0">
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>Server IP:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <widget class="QLineEdit" name="serverIpEdit"/>
      </item>
     </layout>
    </item>
@@ -286,6 +296,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>serverIpEdit</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>MobileAdapterView</receiver>
+   <slot>serverIpChanged(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>426</x>
+     <y>166</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>378</x>
+     <y>153</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>closeButtonClick()</slot>
@@ -296,5 +322,6 @@
   <slot>usernameChanged(QString)</slot>
   <slot>passwordChanged(QString)</slot>
   <slot>dnsChanged(QString)</slot>
+  <slot>serverIpChanged(QString)</slot>
  </slots>
 </ui>

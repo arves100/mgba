@@ -44,6 +44,7 @@ private slots:
 	void closeButtonClick();
 	void p2pPortChanged(int value);
 	void serverDomainChanged(QString str);
+	void serverIpChanged(QString str);
 	void adapterTypeChanged(int value);
 	void usernameChanged(QString str);
 	void passwordChanged(QString str);

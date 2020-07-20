@@ -32,7 +32,8 @@ MobileAdapterView::MobileAdapterView(std::shared_ptr<CoreController> controller,
 	m_ui.p2pPortEdit->setValue(mobile->mobile.config.p2p_port);
 	m_ui.adapterTypeCombo->setCurrentIndex(mobile->mobile.config.device - 8);
 
-	m_ui.serverDomainEdit->setText(QHostAddress(mobile->serverip).toString());
+	m_ui.serverDomainEdit->setText(mobile->serverdomain);
+	m_ui.serverIpEdit->setText(QHostAddress(mobile->serverip).toString());
 }
 
 MobileAdapterView::~MobileAdapterView() {
@@ -89,6 +90,10 @@ void MobileAdapterView::p2pPortChanged(int value) {
 }
 
 void MobileAdapterView::serverDomainChanged(QString str) {
+	strncpy(m_controller->getMobileAdapter()->serverdomain, str.toStdString().c_str(), 0x0A);
+}
+
+void MobileAdapterView::serverIpChanged(QString str) {
 	m_controller->getMobileAdapter()->serverip = QHostAddress(str).toIPv4Address();
 }
 

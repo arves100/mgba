@@ -24,7 +24,15 @@ struct mMobileAdapter {
 	unsigned char config[192];
 	struct mTiming* timing;
 	int32_t timeLeach;
+
+	// Config modification for server domain
+	// (used for automatic patch of the email domain)
+
+	uint16_t checksum_sum;
+	uint16_t checksum_del;
+	char serverdomain[0x0B];
 	uint32_t serverip;
+	bool checksum_update;
 };
 
 void mMobile_init(struct mMobileAdapter* adapter);

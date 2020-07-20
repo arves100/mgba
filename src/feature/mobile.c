@@ -19,10 +19,15 @@ mLOG_DEFINE_CATEGORY(MOBILEADAPTER, "Mobile Adapter", "feature.mobileadapter");
 #define DEBUGCMD_BUFFERSIZE 1024
 
 void mMobile_init(struct mMobileAdapter* adapter) { 
-    mobile_init(&adapter->mobile, adapter, NULL);
-    memset(adapter->socket, INVALID_SOCKET, sizeof(adapter->socket));
     adapter->timeLeach = 0;
-    adapter->timing = NULL;
+	adapter->timing = NULL;
+	adapter->checksum_update = false;
+	adapter->checksum_sum = 0;
+	adapter->checksum_del = 0;
+	memset(adapter->serverdomain, 0, sizeof(adapter->serverdomain));
+	memset(adapter->socket, INVALID_SOCKET, sizeof(adapter->socket));
+
+    mobile_init(&adapter->mobile, adapter, NULL);
 }
 
 void mMobile_clear(struct mMobileAdapter* adapter) {
@@ -79,6 +84,32 @@ bool mobile_board_config_write(void *user, const void *src, const uintptr_t offs
         return false;
 
     memcpy(adapter->config + offset, src, size);
+
+    for (size_t i = 0; i < (size - 0x0A); i++) {
+		if (memcmp(adapter->config + offset + i, "dion.ne.jp", 0x0A) == 0) {
+            adapter->checksum_sum = 0;
+			for (size_t m = 0; m < 0x0A; m++) {
+				adapter->checksum_del += adapter->config[offset + i + m];
+				adapter->config[offset + i + m] = adapter->serverdomain[m];
+				adapter->checksum_sum += adapter->serverdomain[m];
+            }
+
+            // for more than one dion.ne.jp
+            i += 0x0A;
+            adapter->checksum_update = true;
+        }
+    }
+
+    // The adapter request the last bytes (where the checksum is contained 190 and 191)
+    if ((offset + size) > 190 && adapter->checksum_update) {
+		uint16_t checksum = adapter->config[offset + size - 2] + (adapter->config[offset + size - 1] << 8);
+		checksum -= adapter->checksum_del;
+		checksum += adapter->checksum_sum;
+		adapter->checksum_update = false;
+		adapter->checksum_sum = 0;
+		adapter->checksum_del = 0;
+	}
+    
     return true;
 }
 
@@ -86,11 +117,12 @@ bool mobile_board_tcp_connect(void *user, unsigned conn, const unsigned char *ho
     struct Address addr;
     Socket sock;
     USER2(false);
-    
+
     addr.version = IPV4;
 	addr.ipv4 = adapter->serverip;
 
     sock = SocketConnectTCP(port, &addr);
+
     if (sock == INVALID_SOCKET)
         return false;
 
@@ -166,7 +198,7 @@ void mobile_board_time_latch(void *user) {
     USER1;
     
     if (adapter->timing) {
-        adapter->timeLeach = mTimingCurrentTime(adapter->timing);
+		adapter->timeLeach = mTimingGlobalTime(adapter->timing);
     }
 }
 
@@ -178,5 +210,7 @@ bool mobile_board_time_check_ms(void *user, const unsigned ms) {
     }
 
     return false;
-    //return (mTimingCurrentTime(adapter->timing) - adapter->timeLeach) > (int32_t)((double)ms * (1 << 21) / 1000); // ¡× it's not working?
+
+	//return (mTimingGlobalTime(adapter->timing) - adapter->timeLeach) >
+	  //  (int32_t)((double) ms * (1 << 21) / 1000); // ¡× it's not working?
 }

@@ -203,6 +203,7 @@ CoreController::~CoreController() {
 #ifdef USE_LIBMOBILE
 	// ¡×todo: modify this
 	m_config->setOption("AdapterServer", QHostAddress(m_mobile.serverip).toString());
+	m_config->setOption("AdapterDomain", QString(m_mobile.serverdomain));
 	m_config->setOption("AdapterP2PPort", m_mobile.mobile.config.p2p_port);
 	m_config->setOption("AdapterType", ((int) m_mobile.mobile.config.device) - 8);
 
@@ -309,11 +310,14 @@ void CoreController::loadConfig(ConfigController* config) {
 	//QString password = config->getOption("AdapterPassword", "");
 
 	// ¡×note: Waiting....
-	//QString dns1 = config->getOption("AdapterDns1", "");
-	//QString dns2 = config->getOption("AdapterDns2", "");
+	//QString dns = config->getOption("AdapterDns", "");
 
 	QString server = config->getOption("AdapterServer", "");
 	m_mobile.serverip = QHostAddress(server).toIPv4Address();
+
+	QString domain = config->getOption("AdapterDomain", "");
+
+	strncpy(m_mobile.serverdomain, domain.toStdString().c_str(), 0x0A);
 
 	m_mobile.mobile.config.p2p_port = config->getOption("AdapterP2PPort", 2415).toInt();
 	m_mobile.mobile.config.device = (enum mobile_adapter_device)(config->getOption("AdapterType", 0).toInt() + 8);
