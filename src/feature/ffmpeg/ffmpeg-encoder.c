@@ -365,6 +365,8 @@ bool FFmpegEncoderOpen(struct FFmpegEncoder* encoder, const char* outfile) {
 		encoder->video->height = encoder->height;
 		encoder->video->time_base = (AVRational) { VIDEO_TOTAL_LENGTH * encoder->frameskip, GBA_ARM7TDMI_FREQUENCY };
 		encoder->video->framerate = (AVRational) { GBA_ARM7TDMI_FREQUENCY, VIDEO_TOTAL_LENGTH * encoder->frameskip };
+		encoder->videoStream->time_base = encoder->video->time_base;
+		encoder->videoStream->avg_frame_rate = encoder->video->framerate;
 		encoder->video->pix_fmt = encoder->pixFormat;
 		encoder->video->gop_size = 60;
 		encoder->video->max_b_frames = 3;
@@ -546,8 +548,12 @@ void FFmpegEncoderClose(struct FFmpegEncoder* encoder) {
 #endif
 	}
 	if (encoder->audio) {
+#ifdef FFMPEG_USE_CODECPAR
+		avcodec_free_context(&encoder->audio);
+#else
 		avcodec_close(encoder->audio);
 		encoder->audio = NULL;
+#endif
 	}
 
 	if (encoder->resampleContext) {
@@ -569,6 +575,7 @@ void FFmpegEncoderClose(struct FFmpegEncoder* encoder) {
 	}
 
 	if (encoder->videoFrame) {
+		av_freep(encoder->videoFrame->data);
 #if LIBAVCODEC_VERSION_MAJOR >= 55
 		av_frame_free(&encoder->videoFrame);
 #else
@@ -586,8 +593,12 @@ void FFmpegEncoderClose(struct FFmpegEncoder* encoder) {
 	}
 
 	if (encoder->video) {
+#ifdef FFMPEG_USE_CODECPAR
+		avcodec_free_context(&encoder->video);
+#else
 		avcodec_close(encoder->video);
 		encoder->video = NULL;
+#endif
 	}
 
 	if (encoder->scaleContext) {
