@@ -1,3 +1,4 @@
 [submodule "src/third-party/libmobile"]
 	path = src/third-party/libmobile
-	url = https://github.com/REONTeam/ArduinoAdapterGB
+	url = https://github.com/arves100/ArduinoAdapterGB-1
+	branch = patch-1
