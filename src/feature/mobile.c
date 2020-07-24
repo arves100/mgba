@@ -14,8 +14,8 @@
 mLOG_DECLARE_CATEGORY(MOBILEADAPTER);
 mLOG_DEFINE_CATEGORY(MOBILEADAPTER, "Mobile Adapter", "feature.mobileadapter");
 
-#define USER1 struct mMobileAdapter* adapter = (struct mMobileAdapter*)user; if (!adapter) return;
-#define USER2(ret) struct mMobileAdapter* adapter = (struct mMobileAdapter*)user; if (!adapter) return ret;
+#define USER1 struct mMobileAdapter* adapter = (struct mMobileAdapter*)user; if (!adapter) { mLOG(MOBILEADAPTER, ERROR, "adapter == nullptr?"); return; }
+#define USER2(ret) struct mMobileAdapter* adapter = (struct mMobileAdapter*)user; if (!adapter) { mLOG(MOBILEADAPTER, ERROR, "adapter == nullptr?"); return ret; }
 #define DEBUGCMD_BUFFERSIZE 1024
 
 void mMobile_init(struct mMobileAdapter* adapter) { 
@@ -62,16 +62,20 @@ void mobile_board_debug_cmd(void *user, const int send, const struct mobile_pack
 }
 
 void mobile_board_serial_disable(void *user) {
+	mLOG(MOBILEADAPTER, DEBUG, "Serial: disabled");
 }
 
 void mobile_board_serial_enable(void *user) {
+	mLOG(MOBILEADAPTER, DEBUG, "Serial: enable");
 }
 
 bool mobile_board_config_read(void *user, void *dest, const uintptr_t offset, const size_t size) {
-    USER2(false);
+	USER2(false);
 
-    if (offset + size > 192)
-        return false;
+    if (offset + size > 192) {
+		mLOG(MOBILEADAPTER, WARN, "Game attempt to read an invalid config data. Offset %u size %u", offset, size);
+		return false;
+	}
 
     memcpy(dest, adapter->config + offset, size);
     return true;
@@ -80,8 +84,10 @@ bool mobile_board_config_read(void *user, void *dest, const uintptr_t offset, co
 bool mobile_board_config_write(void *user, const void *src, const uintptr_t offset, const size_t size) { 
     USER2(false);
 
-    if (offset + size > 192)
+    if (offset + size > 192) {
+		mLOG(MOBILEADAPTER, WARN, "Game attempt to read an invalid config data. Offset %u size %u", offset, size);
         return false;
+	}
 
     memcpy(adapter->config + offset, src, size);
 
@@ -101,13 +107,15 @@ bool mobile_board_config_write(void *user, const void *src, const uintptr_t offs
     }
 
     // The adapter request the last bytes (where the checksum is contained 190 and 191)
-    if ((offset + size) > 190 && adapter->checksum_update) {
+    if ((offset + size) > 0xBE && adapter->checksum_update) {
 		uint16_t checksum = adapter->config[offset + size - 2] + (adapter->config[offset + size - 1] << 8);
 		checksum -= adapter->checksum_del;
 		checksum += adapter->checksum_sum;
 		adapter->checksum_update = false;
 		adapter->checksum_sum = 0;
 		adapter->checksum_del = 0;
+		adapter->config[offset + size - 2] = checksum & 0xFF;
+		adapter->config[offset + size - 1] = checksum >> 8;
 	}
     
     return true;
@@ -121,10 +129,16 @@ bool mobile_board_tcp_connect(void *user, unsigned conn, const unsigned char *ho
     addr.version = IPV4;
 	addr.ipv4 = adapter->serverip;
 
+    mLOG(MOBILEADAPTER, INFO, "Connect to TCP:%d.%d.%d.%d:%d", host[0], host[1], host[2], host[3], port);
+
     sock = SocketConnectTCP(port, &addr);
 
-    if (sock == INVALID_SOCKET)
+    if (SOCKET_FAILED(sock)) {
+		mLOG(MOBILEADAPTER, ERROR, "Can't connect to TCP:%d.%d.%d.%d:%d. Native error %d", host[0], host[1], host[2],
+		     host[3], port, SocketError());
+
         return false;
+	}
 
     adapter->socket[conn] = sock;
     return true;
@@ -134,12 +148,18 @@ bool mobile_board_tcp_listen(void *user, unsigned conn, const unsigned port) {
     Socket sock;
     USER2(false);
 
+    mLOG(MOBILEADAPTER, INFO, "Start TCP listen for connection %u on port %d", conn, port);
+   
     sock = SocketOpenTCP(port, NULL);
-    if (sock == INVALID_SOCKET)
-        return false;
 
-    if (SocketListen(sock, 1024) == -1) {
-	    SocketClose(sock);
+    if (SOCKET_FAILED(sock)) {
+		mLOG(MOBILEADAPTER, ERROR, "Can't open socket to TCP port %d with id %u\nNative error %d", port, conn, SocketError());
+		return false;
+	}
+
+    if (SOCKET_FAILED(SocketListen(sock, 1024))) {
+		mLOG(MOBILEADAPTER, ERROR, "Can't listen socket to TCP port %d with id %u\nNative error %d", port, conn, SocketError());
+        SocketClose(sock);
         return false;
     }
 
@@ -151,12 +171,18 @@ bool mobile_board_tcp_accept(void *user, unsigned conn) {
     Socket sock;
     USER2(false);
     
-    if (SocketPoll(1, &adapter->socket[conn], NULL, NULL, 1000000) > 0)
-        return false;
+    mLOG(MOBILEADAPTER, INFO, "Accepting TCP connection for connection %u", conn);
+
+    if (SocketPoll(1, &adapter->socket[conn], NULL, NULL, 1000000) > 0) {
+		mLOG(MOBILEADAPTER, ERROR, "Error in pooling the socket for id %u\nNative error %d", conn, SocketError());
+		return false;
+    }
 
     sock = SocketAccept(adapter->socket[conn], NULL);
-    if (sock == INVALID_SOCKET)
-        return false;
+    if (SOCKET_FAILED(sock)) {
+		mLOG(MOBILEADAPTER, ERROR, "Can't accept socket for id %u\nNative error %d", conn, SocketError());
+        return false;	
+    }
     
     SocketClose(adapter->socket[conn]);
     adapter->socket[conn] = sock;
@@ -166,32 +192,52 @@ bool mobile_board_tcp_accept(void *user, unsigned conn) {
 void mobile_board_tcp_disconnect(void *user, unsigned conn) {
     USER1;
 
-    if (adapter->socket[conn] != INVALID_SOCKET) {
+    if (SOCKET_FAILED(adapter->socket[conn])) {
         SocketClose(adapter->socket[conn]);
         adapter->socket[conn] = INVALID_SOCKET;
     }
+
+    mLOG(MOBILEADAPTER, INFO, "TCP disconnect with id %u", conn);
 }
 
 bool mobile_board_tcp_send(void *user, unsigned conn, const void *data, const unsigned size) {
     USER2(false);
-    if (adapter->socket[conn] == INVALID_SOCKET)
-        return false;
+
+    if (SOCKET_FAILED(adapter->socket[conn])) {
+		mLOG(MOBILEADAPTER, ERROR, "Invalid TCP socket for id %u", conn);
+		return false;
+    }
+
+    mLOG(MOBILEADAPTER, INFO, "Sending %u data to TCP connection %u", size, conn);
 
     return SocketSend(adapter->socket[conn], data, size) == size;
 }
 
 int mobile_board_tcp_receive(void *user, unsigned conn, void *data) {
 	Socket pollSocket;
+	ssize_t recvResult;
     USER2(-1);
 
-    if (adapter->socket[conn] == INVALID_SOCKET)
-        return -1;
+    if (SOCKET_FAILED(adapter->socket[conn])) {
+		mLOG(MOBILEADAPTER, ERROR, "Invalid TCP socket for id %u", conn);
+		return -1;	
+    }
 
     pollSocket = adapter->socket[conn];
-    if (!SocketPoll(1, &pollSocket, NULL, NULL, 0))
-        return 0;
+	if (!SocketPoll(1, &pollSocket, NULL, NULL, 0)) {
+		mLOG(MOBILEADAPTER, INFO, "No data received from TCP id %u", conn);
+		return 0;
+	}
 
-    return SocketRecv(pollSocket, data, MOBILE_MAX_TCP_SIZE);
+    recvResult = SocketRecv(pollSocket, data, MOBILE_MAX_TCP_SIZE);
+
+    if (recvResult == -1) {
+		mLOG(MOBILEADAPTER, ERROR, "Error while receiving data from TCP id %u\nNative error %d", conn, SocketError());
+		return recvResult;
+    }
+
+    mLOG(MOBILEADAPTER, INFO, "Received %u data from TCP id %u", recvResult, conn);
+	return recvResult;
 }
 
 void mobile_board_time_latch(void *user) { 
