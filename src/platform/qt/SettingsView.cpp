@@ -502,6 +502,36 @@ void SettingsView::updateConfig() {
 		emit videoRendererChanged();
 	}
 
+#ifdef USE_LIBMOBILE
+	if (m_ui.adapterServer->text() != m_controller->getOption("adapter.server")) {
+		m_controller->setOption("adapter.server", m_ui.adapterServer->text());
+	}
+
+	if (m_ui.adapterUsername->text() != m_controller->getOption("adapter.username")) {
+		m_controller->setOption("adapter.username", m_ui.adapterUsername->text());
+	}
+
+	if (m_ui.adapterPassword->text() != m_controller->getOption("adapter.username")) {
+		m_controller->setOption("adapter.password", m_ui.adapterPassword->text());
+	}
+
+	if (m_ui.adaterP2PPort->value() != m_controller->getOption("adapter.p2pport", 2415).toInt()) {
+		m_controller->setOption("adapter.p2pport", m_ui.adaterP2PPort->value());
+	}
+
+	if (m_ui.adapterDns->text() != m_controller->getOption("adapter.dns")) {
+		m_controller->setOption("adapter.dns", m_ui.adapterDns->text());
+	}
+
+	if (m_ui.adapterType->currentIndex() != m_controller->getOption("adapter.type", 0).toInt()) {
+		m_controller->setOption("adapter.type", m_ui.adapterType->currentIndex());
+	}
+
+	if (m_ui.adapterDomain->text() != m_controller->getOption("adapter.domain")) {
+		m_controller->setOption("adapter.domain", m_ui.adapterDomain->text());
+	}
+#endif
+
 	m_logModel.save(m_controller);
 	m_logModel.logger()->setLogFile(m_ui.logFile->text());
 	m_logModel.logger()->logToFile(m_ui.logToFile->isChecked());
@@ -664,6 +694,18 @@ void SettingsView::reloadConfig() {
 		m_ui.videoScaleSize->setText(tr("(%1×%2)").arg(GBA_VIDEO_HORIZONTAL_PIXELS * value).arg(GBA_VIDEO_VERTICAL_PIXELS * value));
 	});
 	loadSetting("videoScale", m_ui.videoScale, 1);
+
+#ifdef USE_LIBMOBILE
+	loadSetting("adapter.server", m_ui.adapterServer);
+	loadSetting("adapter.username", m_ui.adapterUsername);
+	loadSetting("adapter.password", m_ui.adapterPassword);
+	loadSetting("adapter.p2pport", m_ui.adaterP2PPort, 2415);
+
+	int selectType = loadSetting("adapter.type").toInt();
+	m_ui.adapterType->setCurrentIndex(selectType);
+
+	loadSetting("adapter.dns", m_ui.adapterDns);
+#endif
 }
 
 void SettingsView::saveSetting(const char* key, const QAbstractButton* field) {

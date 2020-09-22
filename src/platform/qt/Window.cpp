@@ -56,10 +56,6 @@
 #include "VideoProxy.h"
 #include "VideoView.h"
 
-#ifdef USE_LIBMOBILE
-#include "MobileAdapterView.h"
-#endif
-
 #ifdef USE_DISCORD_RPC
 #include "DiscordCoordinator.h"
 #endif
@@ -478,6 +474,7 @@ void Window::openSettingsWindow() {
 #ifdef USE_SQLITE3
 	connect(settingsWindow, &SettingsView::libraryCleared, m_libraryView, &LibraryController::clear);
 #endif
+
 	openView(settingsWindow);
 }
 
@@ -1355,7 +1352,10 @@ void Window::setupMenu(QMenuBar* menubar) {
 #endif
 
 #ifdef USE_LIBMOBILE
-	addGameAction(tr("Mobile Adapter GB..."), "cgbAdapter", openControllerTView<MobileAdapterView>(this), "emu");
+	addGameAction(
+	    tr("Mobile Adapter GB..."), "cgbAdapter", [this]() { 
+				m_controller->attachMobileAdapter();	
+	} , "emu");
 #endif
 
 	m_actions.addMenu(tr("Audio/&Video"), "av");

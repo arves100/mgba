@@ -169,8 +169,6 @@ public slots:
 #ifdef USE_LIBMOBILE
 	void attachMobileAdapter();
 	void detachMobileAdapter();
-	mobile_action getMobileAction();
-	struct mMobileAdapter* getMobileAdapter();
 #endif
 
 	void setAVStream(mAVStream*);
@@ -204,10 +202,6 @@ signals:
 	void logPosted(int level, int category, const QString& log);
 
 	void imagePrinted(const QImage&);
-
-#ifdef USE_LIBMOBILE
-	void mobileUpdate();
-#endif
 
 private:
 	void updateKeys();
@@ -269,8 +263,6 @@ private:
 #ifdef USE_LIBMOBILE
 	bool m_loopMobile;
 	struct mMobileAdapter m_mobile;
-
-	ConfigController* m_config; // ¡×todo: modify this into something better
 #endif
 
 #ifdef M_CORE_GB

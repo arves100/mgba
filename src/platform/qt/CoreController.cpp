@@ -200,25 +200,6 @@ CoreController::CoreController(mCore* core, QObject* parent)
 }
 
 CoreController::~CoreController() {
-#ifdef USE_LIBMOBILE
-	// 」todo: modify this
-	m_config->setOption("AdapterServer", QHostAddress(m_mobile.serverip).toString());
-	m_config->setOption("AdapterDomain", QString(m_mobile.serverdomain));
-	m_config->setOption("AdapterP2PPort", m_mobile.mobile.config.p2p_port);
-	m_config->setOption("AdapterType", ((int) m_mobile.mobile.config.device) - 8);
-
-	QString rawConfig = ConfigController::configDir();
-	rawConfig.append(QDir::separator());
-	rawConfig.append("mobile.dat");
-
-	QFile file(rawConfig);
-
-	if (file.open(QIODevice::WriteOnly)) {
-		file.write((const char*)m_mobile.config, 192);
-		file.close();
-	}
-#endif
-
 	endVideoLog();
 	stop();
 	disconnect();
@@ -305,42 +286,17 @@ void CoreController::loadConfig(ConfigController* config) {
 	}
 
 #ifdef USE_LIBMOBILE
-	// 」note: ISP login is not handled by libmobile
-	//QString username = config->getOption("AdapterUsername", "");
-	//QString password = config->getOption("AdapterPassword", "");
+	strncpy(m_mobile.serverdomain, config->getOption("adapter.domain").toStdString().c_str(), 11);
 
-	// 」note: Waiting....
-	//QString dns = config->getOption("AdapterDns", "");
-
-	QString server = config->getOption("AdapterServer", "");
+	QString server = config->getOption("adapter.server", "");
 	m_mobile.serverip = QHostAddress(server).toIPv4Address();
 
-	QString domain = config->getOption("AdapterDomain", "");
+	m_mobile.mobile.config.device =
+	    static_cast<mobile_adapter_device>(config->getOption("adapter.type", 0).toInt() + 8);
 
-	strncpy(m_mobile.serverdomain, domain.toStdString().c_str(), 0x0A);
+	m_mobile.mobile.config.p2p_port = config->getOption("adapter.p2pport", 2415).toInt();
 
-	m_mobile.mobile.config.p2p_port = config->getOption("AdapterP2PPort", 2415).toInt();
-	m_mobile.mobile.config.device = (enum mobile_adapter_device)(config->getOption("AdapterType", 0).toInt() + 8);
-
-	QString rawConfig = ConfigController::configDir();
-	rawConfig.append(QDir::separator());
-	rawConfig.append("mobile.dat");
-
-	QFileInfo info(rawConfig);
-
-	if (info.exists()) {
-		if (info.size() == 192) {
-			QFile file(rawConfig);
-			if (file.open(QIODevice::ReadOnly | QIODevice::ExistingOnly)) {
-				// Config exists so load the data
-				QByteArray config = file.read(192);
-				memcpy(m_mobile.config, config.data(), 192);
-				file.close();
-			}
-		}
-	}
-
-	m_config = config; // 」todo: very bad
+	// 」todo: autogenerate config.dat file (no need to use trainer)
 #endif
 }
 
@@ -942,14 +898,6 @@ void CoreController::detachMobileAdapter() {
 	Interrupter interrupter(this);
 	GB* gb = static_cast<GB*>(m_threadContext.core->board);
 	GBSIOSetDriver(&gb->sio, nullptr);
-}
-
-mobile_action CoreController::getMobileAction() {
-	return mobile_action_get(&m_mobile.mobile);
-}
-
-struct mMobileAdapter* CoreController::getMobileAdapter() {
-	return &m_mobile;
 }
 #endif
 
