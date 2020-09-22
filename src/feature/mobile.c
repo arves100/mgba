@@ -255,8 +255,6 @@ bool mobile_board_time_check_ms(void *user, const unsigned ms) {
         return false;
     }
 
-    return false;
-
-	//return (mTimingGlobalTime(adapter->timing) - adapter->timeLeach) >
-	  //  (int32_t)((double) ms * (1 << 21) / 1000); // ¡× it's not working?
+	return (mTimingGlobalTime(adapter->timing) - adapter->timeLeach) >
+	    (int32_t)((double) ms * (1 << 21) / 1000);
 }

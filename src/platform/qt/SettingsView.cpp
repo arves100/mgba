@@ -700,6 +700,7 @@ void SettingsView::reloadConfig() {
 	loadSetting("adapter.username", m_ui.adapterUsername);
 	loadSetting("adapter.password", m_ui.adapterPassword);
 	loadSetting("adapter.p2pport", m_ui.adaterP2PPort, 2415);
+	loadSetting("adapter.domain", m_ui.adapterDomain);
 
 	int selectType = loadSetting("adapter.type").toInt();
 	m_ui.adapterType->setCurrentIndex(selectType);
