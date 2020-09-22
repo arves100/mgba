@@ -62,11 +62,9 @@ void mobile_board_debug_cmd(void *user, const int send, const struct mobile_pack
 }
 
 void mobile_board_serial_disable(void *user) {
-	mLOG(MOBILEADAPTER, DEBUG, "Serial: disabled");
 }
 
 void mobile_board_serial_enable(void *user) {
-	mLOG(MOBILEADAPTER, DEBUG, "Serial: enable");
 }
 
 bool mobile_board_config_read(void *user, void *dest, const uintptr_t offset, const size_t size) {
