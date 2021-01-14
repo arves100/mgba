@@ -107,13 +107,13 @@ CoreController::CoreController(mCore* core, QObject* parent)
 			controller->m_autosaveCounter = 0;
 		}
 		++controller->m_autosaveCounter;
-
+        
 #ifdef USE_LIBMOBILE
 		if (controller->m_loopMobile) {
 			mobile_loop(&controller->m_mobile.mobile);
-			QMetaObject::invokeMethod(controller, "mobileUpdate");
 		}
 #endif
+
 		controller->finishFrame();
 	};
 
@@ -286,17 +286,7 @@ void CoreController::loadConfig(ConfigController* config) {
 	}
 
 #ifdef USE_LIBMOBILE
-	strncpy(m_mobile.serverdomain, config->getOption("adapter.domain").toStdString().c_str(), 11);
-
-	QString server = config->getOption("adapter.server", "");
-	m_mobile.serverip = QHostAddress(server).toIPv4Address();
-
-	m_mobile.mobile.config.device =
-	    static_cast<mobile_adapter_device>(config->getOption("adapter.type", 0).toInt() + 8);
-
-	m_mobile.mobile.config.p2p_port = config->getOption("adapter.p2pport", 2415).toInt();
-
-	// ¡×todo: autogenerate config.dat file (no need to use trainer)
+	initializeMobileConfig(config);
 #endif
 }
 
@@ -857,6 +847,102 @@ void CoreController::setBattleChipFlavor(int flavor) {
 #endif
 
 #ifdef USE_LIBMOBILE
+void CoreController::initializeMobileConfig(ConfigController* config) {
+	memset(m_mobile.config, 0, sizeof(m_mobile.config));
+
+	m_mobile.config[0x00] = 0x4D; // M
+    m_mobile.config[0x01] = 0x41; // A
+	m_mobile.config[0x02] = 0x81; // Auto register
+    unsigned short checksum = 0x10F; // Header checksum
+
+	// TODO: Honor mGBA settings (proper dns support)
+	// DNS1
+	m_mobile.config[0x04] = 0xD2;
+    m_mobile.config[0x05] = 0xC4;
+    m_mobile.config[0x06] = 0x03;
+    m_mobile.config[0x07] = 0xB7;
+
+	// DNS2 (Disabled)
+    m_mobile.config[0x08] = 0xD2;
+    m_mobile.config[0x09] = 0x8D;
+    m_mobile.config[0x0A] = 0x70;
+    m_mobile.config[0x0B] = 0xA3;
+    checksum += 0x4C2;
+
+	// Login ID
+    m_mobile.config[0x0C] = 0x67; // g
+	checksum += 0x67;
+
+	QString tmp = config->getOption("adapter.loginid");
+
+	for (int i = 0; i < 0x09; i++) {
+		m_mobile.config[0x0D + i] = tmp[i].toLatin1();
+		checksum += m_mobile.config[0x0D + i];
+	}
+
+	QString domain = config->getOption("adapter.domain"), username = config->getOption("adapter.username");
+    tmp = username.append('@') + domain;
+
+	// User email
+	for (int i = 0; i < 0x18; i++) {
+        if (tmp[i].isNull())
+            break;
+
+		m_mobile.config[0x2C + i] = tmp[i].toLatin1();
+        checksum += m_mobile.config[0x2C + i];
+	}
+
+	// SMTP
+	for (int i = 0; i < 0x14; i++) {
+        if (tmp[i].isNull())
+            break;
+
+        m_mobile.config[0x4A + i] = domain[i].toLatin1();
+        checksum += m_mobile.config[0x4A + i];
+    }
+
+	// POP3
+    for (int i = 0; i < 0x13; i++) {
+        if (tmp[i].isNull())
+            break;
+
+        m_mobile.config[0x5E + i] = domain[i].toLatin1();
+        checksum += m_mobile.config[0x5E + i];
+    }
+
+    // Configuration slot 1
+	// TODO: Implement different configuration slot for PHS/DDI
+
+    // Phone number: #9677
+	m_mobile.config[0x76] = 0xA9;
+	m_mobile.config[0x77] = 0x67;
+	m_mobile.config[0x78] = 0x7F;
+	m_mobile.config[0x7B] = 0xF0; // End of the phone
+	checksum += 0x27F;
+
+	memcpy(m_mobile.config + 0x7E, "DION PDC/CDMAONE", 16);
+    checksum += 0x447;
+
+	// Configuration slot 2 and 3 (unused)
+	memset(m_mobile.config + 0x8E, 0xFF, 8);
+    memset(m_mobile.config + 0xA6, 0xFF, 8);
+	checksum += 0xFF0;
+
+	// Checksum
+    m_mobile.config[0xBE] = checksum >> 8;
+	m_mobile.config[0xBF] = checksum & 0xFF;
+
+	// TODO: temp setup of the server until DNS is working
+    QString server = config->getOption("adapter.server", "");
+    m_mobile.serverip = QHostAddress(server).toIPv4Address();
+
+    m_mobile.mobile.config.device =
+        static_cast<mobile_adapter_device>(config->getOption("adapter.type", 0).toInt() + 8);
+
+    m_mobile.mobile.config.p2p_port = config->getOption("adapter.p2pport", 2415).toInt();
+
+}
+
 void CoreController::attachMobileAdapter() {
 	Interrupter interrupter(this);
 	clearMultiplayerController();
@@ -872,18 +958,20 @@ void CoreController::attachMobileAdapter() {
 		GBA* gb = static_cast<GBA*>(m_threadContext.core->board);
 
 		m_mobile.timing = &gb->timing;
+		m_mobile.frequency = GBA_ARM7TDMI_FREQUENCY;
 		m_threadContext.core->setPeripheral(m_threadContext.core, mPERIPH_GBA_MOBILEADAPTER, &m_mobilegba);
-		return;
 	}
+	else {
+		m_mobilegb.d.mobile = &m_mobile;
 
-	m_mobilegb.d.mobile = &m_mobile;
+		GBMobileAdapterCreate(&m_mobilegb.d);
+		m_mobilegb.parent = this;
+		GB* gb = static_cast<GB*>(m_threadContext.core->board);
 
-	GBMobileAdapterCreate(&m_mobilegb.d);
-	m_mobilegb.parent = this;
-	GB* gb = static_cast<GB*>(m_threadContext.core->board);
-
-	m_mobile.timing = &gb->timing;
-	GBSIOSetDriver(&gb->sio, &m_mobilegb.d.d);
+		m_mobile.timing = &gb->timing;
+		m_mobile.frequency = DMG_SM83_FREQUENCY;
+		GBSIOSetDriver(&gb->sio, &m_mobilegb.d.d);
+	}
 }
 
 void CoreController::detachMobileAdapter() {

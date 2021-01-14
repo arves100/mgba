@@ -210,6 +210,10 @@ private:
 
 	void updateFastForward();
 
+#ifdef USE_LIBMOBILE
+	void initializeMobileConfig(ConfigController*);
+#endif
+
 	mCoreThread m_threadContext{};
 
 	bool m_patched = false;

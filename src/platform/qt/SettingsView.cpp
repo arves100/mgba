@@ -530,6 +530,10 @@ void SettingsView::updateConfig() {
 	if (m_ui.adapterDomain->text() != m_controller->getOption("adapter.domain")) {
 		m_controller->setOption("adapter.domain", m_ui.adapterDomain->text());
 	}
+
+	if (m_ui.adapterId->text() != m_controller->getOption("adapter.loginid")) {
+        m_controller->setOption("adapter.loginid", m_ui.adapterId->text());
+	}
 #endif
 
 	m_logModel.save(m_controller);
@@ -701,6 +705,7 @@ void SettingsView::reloadConfig() {
 	loadSetting("adapter.password", m_ui.adapterPassword);
 	loadSetting("adapter.p2pport", m_ui.adaterP2PPort, 2415);
 	loadSetting("adapter.domain", m_ui.adapterDomain);
+	loadSetting("adapter.loginid", m_ui.adapterId);
 
 	int selectType = loadSetting("adapter.type").toInt();
 	m_ui.adapterType->setCurrentIndex(selectType);

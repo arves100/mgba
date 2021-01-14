@@ -1918,38 +1918,38 @@
        <item row="1" column="1">
         <widget class="QLineEdit" name="adapterPassword"/>
        </item>
-       <item row="2" column="0">
+       <item row="3" column="0">
         <widget class="QLabel" name="label_38">
          <property name="text">
           <string>Server IP:</string>
          </property>
         </widget>
        </item>
-       <item row="2" column="1">
+       <item row="3" column="1">
         <widget class="QLineEdit" name="adapterServer">
          <property name="maxLength">
           <number>16</number>
          </property>
         </widget>
        </item>
-       <item row="4" column="0">
+       <item row="5" column="0">
         <widget class="QLabel" name="dnsLabel">
          <property name="text">
           <string>DNS:</string>
          </property>
         </widget>
        </item>
-       <item row="4" column="1">
+       <item row="5" column="1">
         <widget class="QLineEdit" name="adapterDns"/>
        </item>
-       <item row="5" column="0">
+       <item row="6" column="0">
         <widget class="QLabel" name="p2pPortLabel">
          <property name="text">
           <string>P2P Port:</string>
          </property>
         </widget>
        </item>
-       <item row="5" column="1">
+       <item row="6" column="1">
         <widget class="QSpinBox" name="adaterP2PPort">
          <property name="minimum">
           <number>1</number>
@@ -1962,14 +1962,14 @@
          </property>
         </widget>
        </item>
-       <item row="6" column="0">
+       <item row="7" column="0">
         <widget class="QLabel" name="adapterTypelabel">
          <property name="text">
           <string>Adapter type:</string>
          </property>
         </widget>
        </item>
-       <item row="6" column="1">
+       <item row="7" column="1">
         <widget class="QComboBox" name="adapterType">
          <property name="currentText">
           <string>PDC (Blue)</string>
@@ -1999,15 +1999,25 @@
          </item>
         </widget>
        </item>
-       <item row="3" column="0">
+       <item row="4" column="0">
         <widget class="QLabel" name="label_39">
          <property name="text">
           <string>Domain:</string>
          </property>
         </widget>
        </item>
-       <item row="3" column="1">
+       <item row="4" column="1">
         <widget class="QLineEdit" name="adapterDomain"/>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_40">
+         <property name="text">
+          <string>Login ID:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QLineEdit" name="adapterId"/>
        </item>
       </layout>
      </widget>

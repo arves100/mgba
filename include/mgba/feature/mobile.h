@@ -23,16 +23,20 @@ struct mMobileAdapter {
 	Socket socket[MOBILE_MAX_CONNECTIONS];
 	unsigned char config[192];
 	struct mTiming* timing;
-	int32_t timeLeach;
+	int32_t frequency;
+	uint64_t timeLeach;
 
+    uint32_t serverip; // TODO: Remove this when DNS is supported
+
+#if 0 // pls rm
 	// Config modification for server domain
 	// (used for automatic patch of the email domain)
 
 	uint16_t checksum_sum;
 	uint16_t checksum_del;
 	char serverdomain[0x0B];
-	uint32_t serverip;
 	bool checksum_update;
+#endif
 };
 
 void mMobile_init(struct mMobileAdapter* adapter);

@@ -19,12 +19,15 @@ mLOG_DEFINE_CATEGORY(MOBILEADAPTER, "Mobile Adapter", "feature.mobileadapter");
 #define DEBUGCMD_BUFFERSIZE 1024
 
 void mMobile_init(struct mMobileAdapter* adapter) { 
-    adapter->timeLeach = 0;
+	adapter->timeLeach = 0;
 	adapter->timing = NULL;
+	adapter->frequency = 0;
+#if 0
 	adapter->checksum_update = false;
 	adapter->checksum_sum = 0;
 	adapter->checksum_del = 0;
 	memset(adapter->serverdomain, 0, sizeof(adapter->serverdomain));
+#endif
 	memset(adapter->socket, INVALID_SOCKET, sizeof(adapter->socket));
 
     mobile_init(&adapter->mobile, adapter, NULL);
@@ -87,8 +90,9 @@ bool mobile_board_config_write(void *user, const void *src, const uintptr_t offs
         return false;
 	}
 
-    memcpy(adapter->config + offset, src, size);
+    //memcpy(adapter->config + offset, src, size);
 
+#if 0
     for (size_t i = 0; i < (size - 0x0A); i++) {
 		if (memcmp(adapter->config + offset + i, "dion.ne.jp", 0x0A) == 0) {
             adapter->checksum_sum = 0;
@@ -115,7 +119,8 @@ bool mobile_board_config_write(void *user, const void *src, const uintptr_t offs
 		adapter->config[offset + size - 2] = checksum & 0xFF;
 		adapter->config[offset + size - 1] = checksum >> 8;
 	}
-    
+#endif // pls rm
+
     return true;
 }
 
@@ -242,7 +247,7 @@ void mobile_board_time_latch(void *user) {
     USER1;
     
     if (adapter->timing) {
-		adapter->timeLeach = mTimingGlobalTime(adapter->timing);
+		adapter->timeLeach = mTimingCurrentTime(adapter->timing);
     }
 }
 
@@ -253,6 +258,5 @@ bool mobile_board_time_check_ms(void *user, const unsigned ms) {
         return false;
     }
 
-	return (mTimingGlobalTime(adapter->timing) - adapter->timeLeach) >
-	    (int32_t)((double) ms * (1 << 21) / 1000);
+    return ((mTimingCurrentTime(adapter->timing) - adapter->timeLeach) / adapter->frequency) > ms;
 }
