@@ -758,6 +758,7 @@ if(USE_LIBMOBILE)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/third-party/libmobile/libmobile/mobile.c
 		${CMAKE_CURRENT_SOURCE_DIR}/src/third-party/libmobile/libmobile/serial.c
 	)
+	source_group(feature/libmobile FILES ${LIBMOBILE_SRC})
 	list(APPEND FEATURE_SRC ${LIBMOBILE_SRC} ${CMAKE_CURRENT_SOURCE_DIR}/src/feature/mobile.c)
 	message("Distributing mGBA binaries with libmobile is subject to the terms of GNU AGPL 3.0")
 	message("For more information visit: https://github.com/REONTeam/ArduinoAdapterGB/blob/master/LICENSE")
