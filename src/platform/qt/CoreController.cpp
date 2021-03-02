@@ -29,6 +29,7 @@
 #include <mgba-util/vfs.h>
 #ifdef USE_LIBMOBILE
 #include <QHostAddress>
+#include <algorithm>
 #endif
 
 #define AUTOSAVE_GRANULARITY 600
@@ -45,10 +46,6 @@ CoreController::CoreController(mCore* core, QObject* parent)
 {
 	m_threadContext.core = core;
 	m_threadContext.userData = this;
-
-#ifdef USE_LIBMOBILE
-	mMobile_init(&m_mobile);
-#endif
 
 	m_resetActions.append([this]() {
 		if (m_autoload) {
@@ -287,6 +284,7 @@ void CoreController::loadConfig(ConfigController* config) {
 
 #ifdef USE_LIBMOBILE
 	initializeMobileConfig(config);
+	mMobile_init(&m_mobile);
 #endif
 }
 
